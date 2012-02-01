@@ -31,7 +31,7 @@ setup(
 	description = 'A library to access Prestashop data with Python.',
 	long_description = read('README'),
 	classifiers = [
-		'Development Status :: 3 - Alpha',
+		'Development Status :: 4 - Beta',
 		'Intended Audience :: Developers',
 		'License :: OSI Approved :: GNU Affero General Public License v3',
 		'Topic :: Software Development :: Libraries :: Python Modules',
