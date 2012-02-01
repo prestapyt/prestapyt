@@ -1,14 +1,10 @@
 prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
-Learn more about the PrestaShop Web Service from the [Official Documentation](http://wiki.prestashop.com/display/enEN/Using+the+REST+webservice).
+Learn more about the PrestaShop Web Service from the [Official Documentation](http://doc.prestashop.com/display/PS14/Using+the+REST+webservice).
 
 prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
 Similar to PSWebServiceLibrary.php, prestapyt is a thin wrapper around the PrestaShop Web Service: it takes care of making the call to your PrestaShop instance's Web Service, supports the Web Service's HTTP-based CRUD operations (handling any errors) and then returns the XML ready for you to work with in Python (as well as prestasac if you work with scala)
 
 Beta version, the post and put doesn't yet work.
-
-#Credits:
-Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
-Thanks to Alex Dean for his port of PSWebServiceLibrary.php to the Scala language, prestasac (https://github.com/orderly/prestashop-scala-client) from which I also inspired my library.
 
 #Installation
 TODO
@@ -40,7 +36,11 @@ TODO
 
 #API Documentation
 Documentation for the PrestaShop Web Service can be found on the PrestaShop wiki:
-[Using the REST webservice](http://wiki.prestashop.com/display/enEN/Using+the+REST+webservice)
+[Using the REST webservice](http://doc.prestashop.com/display/PS14/Using+the+REST+webservice)
+
+#Credits:
+Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
+Thanks to Alex Dean for his port of PSWebServiceLibrary.php to the Scala language, prestasac (https://github.com/orderly/prestashop-scala-client) from which I also inspired my library.
 
 #Copyright and License
 
