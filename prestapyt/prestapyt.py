@@ -398,11 +398,10 @@ if __name__ == '__main__':
 
     print "ADD"
     address = """
-<?xml version="1.0" encoding="UTF-8">
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
 <address>
 	<id></id>
-	<id_customer></id_customer>
+	<id_customer>2</id_customer>
 	<id_manufacturer>1</id_manufacturer>
 	<id_supplier></id_supplier>
 	<id_country>21</id_country>
