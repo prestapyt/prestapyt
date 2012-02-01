@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-import sys, os
+import os
 from setuptools import setup
-from setuptools import find_packages
 
 __author__ = 'Guewen Baconnier <guewen.baconnier@gmail.com>'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -14,7 +13,6 @@ setup(
 	# Basic package information.
 	name = 'prestapyt',
 	version = __version__,
-	packages = find_packages(),
 
 	# Packaging options.
 	include_package_data = True,
@@ -26,9 +24,10 @@ setup(
 	author = 'Guewen Baconnier',
 	author_email = 'guewen.baconnier@gmail.com',
 	license = 'GNU AGPL-3',
-	url = 'http://github.com/guewen/prestapyt/tree/master',
+	url = 'http://github.com/guewen/prestapyt',
+    packages=['prestapyt'],
 	keywords = 'prestashop api client rest',
-	description = 'A library to access Prestashop data with Python.',
+	description = 'A library to access Prestashop Web Service from Python.',
 	long_description = read('README'),
 	classifiers = [
 		'Development Status :: 4 - Beta',
