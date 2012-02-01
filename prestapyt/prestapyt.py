@@ -150,9 +150,6 @@ class PrestaShopWebService(object):
             print "Execute url: %s / method: %s" % (url, method)
 
         request_headers = self.headers.copy()
-        if body:
-            request_headers['Content-Type'] = 'text/xml; charset=utf-8'
-            request_headers['Content-Length'] = str(len(body))
         request_headers.update(add_headers)
 
         header, content = client.request(url, method, body=body, headers=request_headers)
@@ -232,7 +229,7 @@ class PrestaShopWebService(object):
         @param xml: Full XML of new resource
         @return: an ElementTree of the response from the web service
         """
-        headers = {'Content-Type': 'multipart/form-data'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         return self._parse(self._execute(url, 'POST', body=xml, add_headers=headers)[2])
 
     def get(self, resource, resource_id=None, options=None):
@@ -308,7 +305,8 @@ class PrestaShopWebService(object):
         @param xml: modified XML of the resource
         @return: an ElementTree of the Webservice's response
         """
-        return self._parse(self._execute(url, 'PUT', body=xml)[2])
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return self._parse(self._execute(url, 'PUT', body=xml, add_headers=headers)[2])
 
     def delete(self, resource, resource_ids):
         """
@@ -368,7 +366,7 @@ if __name__ == '__main__':
     	<alias>manufacturer</alias>
     	<company />
     	<lastname>JOBS</lastname>
-    	<firstname>STEVEE</firstname>
+    	<firstname>STEVEN</firstname>
     	<address1>1 Infinite Loop</address1>
     	<address2 />
     	<postcode>95014</postcode>

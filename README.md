@@ -1,4 +1,5 @@
 prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
+
 Learn more about the PrestaShop Web Service from the [Official Documentation](http://doc.prestashop.com/display/PS14/Using+the+REST+webservice).
 
 prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
@@ -40,6 +41,7 @@ Documentation for the PrestaShop Web Service can be found on the PrestaShop wiki
 
 #Credits:
 Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
+
 Thanks to Alex Dean for his port of PSWebServiceLibrary.php to the Scala language, prestasac (https://github.com/orderly/prestashop-scala-client) from which I also inspired my library.
 
 #Copyright and License
