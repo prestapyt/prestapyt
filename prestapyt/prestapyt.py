@@ -150,10 +150,10 @@ class PrestaShopWebService(object):
             print "Execute url: %s / method: %s" % (url, method)
 
         request_headers = self.headers.copy()
-        request_headers.update(add_headers)
         if body:
             request_headers['Content-Type'] = 'text/xml; charset=utf-8'
             request_headers['Content-Length'] = str(len(body))
+        request_headers.update(add_headers)
 
         header, content = client.request(url, method, body=body, headers=request_headers)
         status_code = int(header['status'])
@@ -297,7 +297,8 @@ class PrestaShopWebService(object):
         @param xml: modified XML of the resource
         @return: an ElementTree of the Webservice's response
         """
-        return self.edit_with_url(self._api_url + resource + '/' + resource_id, xml)
+        full_url = "%s%s/%s" % (self._api_url, resource, resource_id)
+        return self.edit_with_url(full_url, xml)
 
     def edit_with_url(self, url, xml):
         """
@@ -354,6 +355,34 @@ if __name__ == '__main__':
 
     print "HEAD"
     print prestashop.head('addresses')
+
+    print "EDIT"
+    prestashop.edit("addresses", 1, """<prestashop xmlns:ns0="http://www.w3.org/1999/xlink">
+    <address>
+    	<id>1</id>
+    	<id_customer />
+    	<id_manufacturer ns0:href="http://localhost:8080/api/manufacturers/1">1</id_manufacturer>
+    	<id_supplier />
+    	<id_country ns0:href="http://localhost:8080/api/countries/21">21</id_country>
+    	<id_state ns0:href="http://localhost:8080/api/states/5">5</id_state>
+    	<alias>manufacturer</alias>
+    	<company />
+    	<lastname>JOBS</lastname>
+    	<firstname>STEVEE</firstname>
+    	<address1>1 Infinite Loop</address1>
+    	<address2 />
+    	<postcode>95014</postcode>
+    	<city>Cupertino</city>
+    	<other />
+    	<phone>(800) 275-2273</phone>
+    	<phone_mobile />
+    	<dni />
+    	<vat_number />
+    	<deleted>0</deleted>
+    	<date_add>2012-01-22 12:30:17</date_add>
+    	<date_upd>2012-01-22 12:30:17</date_upd>
+    </address>
+    </prestashop>""")
 
     print "ADD"
     address = """
