@@ -17,14 +17,17 @@ TODO
     prestashop = PrestaShopWebService('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
 
     # get all addresses
-    print ElementTree.tostring(prestashop.get('addresses'))
+    prestashop.get('addresses')  # returns ElementTree
 
     # get address 1
-    print ElementTree.tostring(prestashop.get('addresses', resource_id=1))
-    print ElementTree.tostring(prestashop.get('addresses/1'))
+    prestashop.get('addresses', resource_id=1)
+    prestashop.get('addresses/1')
+
+    # full url
+    prestashop.get('http://localhost:8080/api/addresses/1')
 
     #filters
-    print ElementTree.tostring(prestashop.get('addresses', options={'limit': 10}))
+    prestashop.get('addresses', options={'limit': 10})
 
     # head
     print prestashop.head('addresses')
@@ -34,6 +37,15 @@ TODO
 
     # delete many resources
     prestashop.delete('addresses', resource_ids=[5,6])
+
+    # add
+    prestashop.add('addresses', xml)
+
+    # edit
+    prestashop.edit('addresses', 5, xml)
+
+    # get a blank xml
+    prestashop.get('addresses', options={'schema': 'blank'})
 
 #API Documentation
 Documentation for the PrestaShop Web Service can be found on the PrestaShop wiki:
