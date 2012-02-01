@@ -230,7 +230,7 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the response from the web service
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'POST', body=xml, add_headers=headers)[2])
+        return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
 
     def get(self, resource, resource_id=None, options=None):
         """
@@ -306,7 +306,7 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'PUT', body=xml, add_headers=headers)[2])
+        return self._parse(self._execute(url, 'PUT', body=self.encode(xml), add_headers=headers)[2])
 
     def delete(self, resource, resource_ids):
         """
@@ -334,6 +334,20 @@ class PrestaShopWebService(object):
         self._execute(url, 'DELETE')
         return True
 
+    @staticmethod
+    def unicode2utf8(text):
+        if isinstance(text, unicode):
+            try:
+                text = text.encode('utf-8')
+            except Exception:
+                pass
+        return text
+
+    @staticmethod
+    def encode(text):
+        if isinstance(text, (str, unicode)):
+            return PrestaShopWebService.unicode2utf8(text)
+        return str(text)
 
 if __name__ == '__main__':
     # TODO put in examples
