@@ -117,7 +117,7 @@ def dict2xml(data):
         raise Exception('Only one root node allowed')
     root, _ = _process_complex(doc, data.items())
     doc.appendChild(root[0])
-    return doc.toprettyxml(indent=' ')
+    return doc.toxml()
 
 
 if __name__ == '__main__':

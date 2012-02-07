@@ -8,7 +8,14 @@ Similar to PSWebServiceLibrary.php, prestapyt is a thin wrapper around the Prest
 Beta version, the post and put doesn't yet work.
 
 #Installation
-TODO
+
+The easiest way to install prestapyt (needs setuptools):
+
+    easy_install prestapyt
+
+If you do not have setuptools, download prestapyt as a .tar.gz or .zip from here (https://github.com/guewen/prestapyt/downloads), untar it and run:
+
+    python setup.py install
 
 #Usage
 

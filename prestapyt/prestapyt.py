@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
     Prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
@@ -13,11 +14,15 @@
 """
 
 __author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 import urllib
 import httplib2
+import xml2dict
+import dict2xml
+import unicode_encode
 
+from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
 try:
     from xml.etree import cElementTree as ElementTree
@@ -40,12 +45,16 @@ class PrestaShopWebServiceError(Exception):
         return repr(self.msg)
 
 
+class PrestaShopAuthenticationError(PrestaShopWebServiceError):
+    pass
+
+
 class PrestaShopWebService(object):
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
     MAX_COMPATIBLE_VERSION = '1.4.7.5'
 
-    def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
+    def __init__(self, api_url, api_key, parse_type='xml', debug=False, headers=None, client_args=None):
         """
         Create an instance of PrestashopWebService.
 
@@ -60,6 +69,7 @@ class PrestaShopWebService(object):
 
         @param api_url: Root URL for the shop
         @param api_key: Authentification key
+        @param parse_type: 'xml' or 'dict' default parse type
         @param debug: Debug mode Activated (True) or deactivated (False)
         @param headers: Custom header, is a dict accepted by httplib2 as instance {'User-Agent': 'Schkounitz'}
         @param client_args: Dict of extra arguments for HTTP Client (httplib2) as instance {'timeout': 10.0}
@@ -81,6 +91,7 @@ class PrestaShopWebService(object):
         # optional arguments
         self.debug = debug
         self.client_args = client_args
+        self.parse_type = parse_type
 
         # use header you coders you want, otherwise, use a default
         self.headers = headers
@@ -104,6 +115,9 @@ class PrestaShopWebService(object):
                        'returned an HTTP status of %d. That means: %s.')
         if status_code in (200, 201):
             return True
+        elif status_code == 401:
+            raise PrestaShopAuthenticationError(error_label
+                                % (status_code, message_by_code[status_code]), status_code)
         elif status_code in message_by_code:
             raise PrestaShopWebServiceError(error_label
                     % (status_code, message_by_code[status_code]), status_code)
@@ -163,20 +177,29 @@ class PrestaShopWebService(object):
 
         return status_code, header, content
 
-    def _parse(self, content):
+    def _parse(self, content, parse_type=None):
         """
         Parse the response of the webservice, assumed to be a XML in utf-8
 
         @param content: response from the webservice
+        @param parse_type: 'xml' or 'dict', type of object to be returned by the request, if not given,
+                            the default one given at initialization will be used
         @return: an ElementTree of the content
         """
         if not content:
             raise PrestaShopWebServiceError('HTTP response is empty')
+        if parse_type is None:
+            parse_type = self.parse_type
+
         try:
-            xml_content = ElementTree.fromstring(content.decode('utf-8'))
-        except ElementTree.ParseError, err:
+            parsed_content = ElementTree.fromstring(content)
+        except ExpatError, err:
             raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
-        return xml_content
+        if parse_type == 'dict':
+            parsed_content = xml2dict.ET2dict(parsed_content)
+        elif parse_type != 'xml':
+            raise Exception("Code error. Parse type %s not supported!" % (parse_type,))
+        return parsed_content
 
     def _validate(self, options):
         """
@@ -188,7 +211,7 @@ class PrestaShopWebService(object):
         if not isinstance(options, dict):
             raise PrestaShopWebServiceError('Parameters must be a instance of dict')
         supported = ('filter', 'display', 'sort', 'limit', 'schema')
-        # filter[enEN:firstname] (as e.g.) is allowed, so check only the part before a [
+        # filter[firstname] (as e.g.) is allowed, so check only the part before a [
         unsupported = set([param.split('[')[0] for param in options]).difference(supported)
         if unsupported:
             raise PrestaShopWebServiceError('Unsupported parameters: %s'
@@ -199,10 +222,10 @@ class PrestaShopWebService(object):
         """
         Translate the dict of options to a url form
         As instance :
-        {'display': '[enEN:firstname,lastname]',
-         'filter': 'filter[enEN:id]=[1|enEN:5]'}
+        {'display': '[firstname,lastname]',
+         'filter': 'filter[id]=[1|5]'}
         will returns :
-        'display=[enEN:firstname,lastname]&filter[enEN:id]=[1|enEN:5]'
+        'display=[firstname,lastname]&filter[id]=[1|5]'
 
         @param options: dict of options for the request
         @return: string to use in the url
@@ -211,28 +234,33 @@ class PrestaShopWebService(object):
             options.update({'debug': True})
         return urllib.urlencode(options)
 
-    def add(self, resource, xml):
+    def add(self, resource, content):
         """
-        Add (POST) a resource
+        Add (POST) a resource. The content can be a dict of values to create.
 
         @param resource: type of resource to create
-        @param xml: Full XML of new resource
+        @param content: Full XML as string or dict of new resource values.
+        If a dict is given, it will be converted to XML with the necessary root tag ie:
+            <prestashop>[[dict converted to xml]]</prestashop>
         @return: an ElementTree of the response from the web service
         """
-        return self.add_with_url(self._api_url + resource, xml)
+        if isinstance(content, dict):
+            root_content = {'prestashop': content}
+            content = dict2xml.dict2xml(root_content)
+        return self.add_with_url(self._api_url + resource, content)
 
     def add_with_url(self, url, xml):
         """
         Add (POST) a resource
 
         @param url: A full URL which for the resource type to create
-        @param xml: Full XML of new resource
+        @param xml: Full XML as string of new resource.
         @return: an ElementTree of the response from the web service
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
 
-    def get(self, resource, resource_id=None, options=None):
+    def get(self, resource, resource_id=None, options=None, parse_type=None):
         """
         Retrieve (GET) a resource
 
@@ -240,7 +268,9 @@ class PrestaShopWebService(object):
         @param resource_id: optional resource id to retrieve
         @param options: Optional dict of parameters (one or more of
                         'filter', 'display', 'sort', 'limit', 'schema')
-        @return: an ElementTree of the response from the web service
+        @param parse_type: 'xml' or 'dict' to specify the return type
+        @return: an ElementTree or a dict of the response from the web service according to parse_type
+                 Remove root keys ['prestashop'] from the message
         """
         full_url = self._api_url + resource
         if resource_id is not None:
@@ -248,16 +278,20 @@ class PrestaShopWebService(object):
         if options is not None:
             self._validate(options)
             full_url += "?%s" % (self._options_to_querystring(options),)
-        return self.get_with_url(full_url)
+        return self.get_with_url(full_url, parse_type=parse_type)
 
-    def get_with_url(self, url):
+    def get_with_url(self, url, parse_type=None):
         """
         Retrieve (GET) a resource from a full URL
 
         @param url: An URL which explicitly sets the resource type and ID to retrieve
-        @return: an ElementTree of the response
+        @return: an ElementTree or dict of the response according to parse_type
+                 full response, does not remove root tags
         """
-        return self._parse(self._execute(url, 'GET')[2])
+        response = self._parse(self._execute(url, 'GET')[2], parse_type=parse_type)
+        if isinstance(response, dict):
+            response = response['prestashop']
+        return response
 
     def head(self, resource, resource_id=None, options=None):
         """
@@ -285,28 +319,34 @@ class PrestaShopWebService(object):
         """
         return self._execute(url, 'HEAD')[1]
 
-    def edit(self, resource, resource_id, xml):
+    def edit(self, resource, resource_id, content):
         """
-        Edit (PUT) a resource
+        Edit (PUT) a resource. The content can be a dict of values to update.
 
         @param resource: type of resource to edit
         @param resource_id: id of the resource to edit
-        @param xml: modified XML of the resource
+        @param content: modified XML as string or dict of the resource.
+        If a dict is given, it will be converted to XML with the necessary root tags ie:
+        <prestashop>[[dict converted to xml]]</prestashop>
         @return: an ElementTree of the Webservice's response
         """
+        if isinstance(content, dict):
+            root_content = {'prestashop': content}
+            content = dict2xml.dict2xml(root_content)
         full_url = "%s%s/%s" % (self._api_url, resource, resource_id)
-        return self.edit_with_url(full_url, xml)
+        return self.edit_with_url(full_url, content)
 
     def edit_with_url(self, url, xml):
         """
         Edit (PUT) a resource from a full URL
 
         @param url: an full url to edit a resource
-        @param xml: modified XML of the resource
+        @param xml: modified XML as string of the resource.
         @return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'PUT', body=self.encode(xml), add_headers=headers)[2])
+        print xml
+        return self._parse(self._execute(url, 'PUT', body=unicode_encode.encode(xml), add_headers=headers)[2])
 
     def delete(self, resource, resource_ids):
         """
@@ -334,101 +374,40 @@ class PrestaShopWebService(object):
         self._execute(url, 'DELETE')
         return True
 
-    @staticmethod
-    def unicode2utf8(text):
-        if isinstance(text, unicode):
-            try:
-                text = text.encode('utf-8')
-            except Exception:
-                pass
-        return text
-
-    @staticmethod
-    def encode(text):
-        if isinstance(text, (str, unicode)):
-            return PrestaShopWebService.unicode2utf8(text)
-        return str(text)
-
 if __name__ == '__main__':
-    # TODO put in examples
-    # examples of each method
-
     prestashop = PrestaShopWebService('http://localhost:8080/api',
-                                      'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
-    prestashop.debug = True
+                                      'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',
+                                      parse_type='dict')
+    #prestashop.debug = True
+    from pprint import pprint
+    pprint(prestashop.get(''))
+    pprint(prestashop.head(''))
+    pprint(prestashop.get('addresses', 1, parse_type='xml'))
+    pprint(prestashop.get('addresses', 1))
+    pprint(prestashop.get('products', 1))
 
+    address_data = prestashop.get('addresses', 1)
+    address_data['address']['firstname'] = 'Robert'
+    prestashop.edit('addresses', 1, address_data)
 
-    print "GET"
-    print ElementTree.tostring(prestashop.get('addresses'))
-    print ElementTree.tostring(prestashop.get('addresses', resource_id=1))
-    print ElementTree.tostring(prestashop.get('addresses/1'))
-    print ElementTree.tostring(prestashop.get('addresses', options={'limit': 1}))
-    print ElementTree.tostring(prestashop.get('stock_movement_reasons'))
-
-    print "HEAD"
-    print prestashop.head('addresses')
-
-    print "EDIT"
-    prestashop.edit("addresses", 1, """<prestashop xmlns:ns0="http://www.w3.org/1999/xlink">
-    <address>
-    	<id>1</id>
-    	<id_customer />
-    	<id_manufacturer ns0:href="http://localhost:8080/api/manufacturers/1">1</id_manufacturer>
-    	<id_supplier />
-    	<id_country ns0:href="http://localhost:8080/api/countries/21">21</id_country>
-    	<id_state ns0:href="http://localhost:8080/api/states/5">5</id_state>
-    	<alias>manufacturer</alias>
-    	<company />
-    	<lastname>JOBS</lastname>
-    	<firstname>STEVEN</firstname>
-    	<address1>1 Infinite Loop</address1>
-    	<address2 />
-    	<postcode>95014</postcode>
-    	<city>Cupertino</city>
-    	<other />
-    	<phone>(800) 275-2273</phone>
-    	<phone_mobile />
-    	<dni />
-    	<vat_number />
-    	<deleted>0</deleted>
-    	<date_add>2012-01-22 12:30:17</date_add>
-    	<date_upd>2012-01-22 12:30:17</date_upd>
-    </address>
-    </prestashop>""")
-
-    print "ADD"
-    address = """
-<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-<address>
-	<id></id>
-	<id_customer>2</id_customer>
-	<id_manufacturer>1</id_manufacturer>
-	<id_supplier></id_supplier>
-	<id_country>21</id_country>
-	<id_state>5</id_state>
-	<alias>test</alias>
-
-	<company></company>
-	<lastname>test</lastname>
-	<firstname>test</firstname>
-	<address1>test</address1>
-	<address2></address2>
-	<postcode>95014</postcode>
-	<city>test</city>
-	<other></other>
-	<phone></phone>
-
-	<phone_mobile></phone_mobile>
-	<dni></dni>
-	<vat_number></vat_number>
-	<deleted></deleted>
-</address>
-</prestashop>
-"""
-
-    # print "DELETE"
-    #prestashop.delete('stock_movement_reasons', resource_ids=4)
-    #prestashop.delete('stock_movement_reasons', resource_ids=[6,7])
-
-    prestashop.add('addresses', address)
-    #import pdb; pdb.set_trace()
+    address_data = prestashop.get('addresses', options={'schema': 'blank'})
+    address_data['address'].update({'address1': '1 Infinite Loop',
+                                    'address2': '',
+                                    'alias': 'manufacturer',
+                                    'city': 'Cupertino',
+                                    'company': '',
+                                    'deleted': '0',
+                                    'dni': '',
+                                    'firstname': 'STEVE',
+                                    'id_country': '21',
+                                    'id_customer': '',
+                                    'id_manufacturer': '1',
+                                    'id_state': '5',
+                                    'id_supplier': '',
+                                    'lastname': 'JOBY',
+                                    'other': '',
+                                    'phone': '(800) 275-2273',
+                                    'phone_mobile': '',
+                                    'postcode': '95014',
+                                    'vat_number': ''})
+    prestashop.add('addresses', address_data)
