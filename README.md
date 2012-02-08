@@ -21,10 +21,12 @@ If you do not have setuptools, download prestapyt as a .tar.gz or .zip from here
 
     from prestapyt import PrestaShopWebServiceError, PrestaShopWebService
 
-    prestashop = PrestaShopWebService('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
+    prestashop = PrestaShopWebService('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')  # messages will be as xml
+    # or
+    prestashop = PrestaShopWebServiceDict('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')  # messages will be as dict
 
     # get all addresses
-    prestashop.get('addresses')  # returns ElementTree
+    prestashop.get('addresses')  # returns ElementTree (PrestaShopWebService) or dict (PrestaShopWebServiceDict)
 
     # get address 1
     prestashop.get('addresses', resource_id=1)
