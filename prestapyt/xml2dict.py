@@ -30,8 +30,9 @@ def _parse_node(node):
 
     value = node.text.strip() if node.text is not None else ''
     # when we have no value in the element and an id in the attribute,
-    # we returns the ids as value of the element
-    if not value and attrs.get('id'):
+    # we returns the ids as value of the element, except for the language element
+    # because it has to stay metadata
+    if not value and attrs.get('id') and node.tag != 'language':
         value = attrs.pop('id')
 
     if attrs:
