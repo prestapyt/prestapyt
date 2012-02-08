@@ -14,7 +14,7 @@
 """
 
 __author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 import urllib
 import httplib2
@@ -137,10 +137,8 @@ class PrestaShopWebService(object):
             if not (LooseVersion(self.MIN_COMPATIBLE_VERSION) <
                     LooseVersion(version) <
                     LooseVersion(self.MAX_COMPATIBLE_VERSION)):
-                raise PrestaShopWebServiceError(
-                    ("This library is not compatible with this version of PrestaShop (%s). "
-                     "Please upgrade/downgrade this library")
-                    % (version,))
+                print ("This library may not be compatible with this version of PrestaShop (%s). "
+                     "Please upgrade/downgrade this library") % (version,)
         return True
 
     def _execute(self, url, method, body=None, add_headers=None):

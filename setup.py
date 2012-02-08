@@ -4,7 +4,7 @@ import os
 from setuptools import setup
 
 __author__ = 'Guewen Baconnier <guewen.baconnier@gmail.com>'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
