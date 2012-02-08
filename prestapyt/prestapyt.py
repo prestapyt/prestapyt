@@ -50,11 +50,14 @@ class PrestaShopAuthenticationError(PrestaShopWebServiceError):
 
 
 class PrestaShopWebService(object):
+    """
+    Interacts with the PrestaShop WebService API, use XML for messages
+    """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
     MAX_COMPATIBLE_VERSION = '1.4.7.5'
 
-    def __init__(self, api_url, api_key, parse_type='xml', debug=False, headers=None, client_args=None):
+    def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
         Create an instance of PrestashopWebService.
 
@@ -69,7 +72,6 @@ class PrestaShopWebService(object):
 
         @param api_url: Root URL for the shop
         @param api_key: Authentification key
-        @param parse_type: 'xml' or 'dict' default parse type
         @param debug: Debug mode Activated (True) or deactivated (False)
         @param headers: Custom header, is a dict accepted by httplib2 as instance {'User-Agent': 'Schkounitz'}
         @param client_args: Dict of extra arguments for HTTP Client (httplib2) as instance {'timeout': 10.0}
@@ -91,7 +93,6 @@ class PrestaShopWebService(object):
         # optional arguments
         self.debug = debug
         self.client_args = client_args
-        self.parse_type = parse_type
 
         # use header you coders you want, otherwise, use a default
         self.headers = headers
@@ -175,28 +176,21 @@ class PrestaShopWebService(object):
 
         return status_code, header, content
 
-    def _parse(self, content, parse_type=None):
+    def _parse(self, content):
         """
         Parse the response of the webservice, assumed to be a XML in utf-8
 
         @param content: response from the webservice
-        @param parse_type: 'xml' or 'dict', type of object to be returned by the request, if not given,
-                            the default one given at initialization will be used
         @return: an ElementTree of the content
         """
         if not content:
             raise PrestaShopWebServiceError('HTTP response is empty')
-        if parse_type is None:
-            parse_type = self.parse_type
 
         try:
             parsed_content = ElementTree.fromstring(content)
         except ExpatError, err:
             raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
-        if parse_type == 'dict':
-            parsed_content = xml2dict.ET2dict(parsed_content)
-        elif parse_type != 'xml':
-            raise Exception("Code error. Parse type %s not supported!" % (parse_type,))
+
         return parsed_content
 
     def _validate(self, options):
@@ -242,9 +236,6 @@ class PrestaShopWebService(object):
             <prestashop>[[dict converted to xml]]</prestashop>
         @return: an ElementTree of the response from the web service
         """
-        if isinstance(content, dict):
-            root_content = {'prestashop': content}
-            content = dict2xml.dict2xml(root_content)
         return self.add_with_url(self._api_url + resource, content)
 
     def add_with_url(self, url, xml):
@@ -258,7 +249,7 @@ class PrestaShopWebService(object):
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
 
-    def get(self, resource, resource_id=None, options=None, parse_type=None):
+    def get(self, resource, resource_id=None, options=None):
         """
         Retrieve (GET) a resource
 
@@ -266,9 +257,7 @@ class PrestaShopWebService(object):
         @param resource_id: optional resource id to retrieve
         @param options: Optional dict of parameters (one or more of
                         'filter', 'display', 'sort', 'limit', 'schema')
-        @param parse_type: 'xml' or 'dict' to specify the return type
-        @return: an ElementTree or a dict of the response from the web service according to parse_type
-                 Remove root keys ['prestashop'] from the message
+        @return: an ElementTree of the response
         """
         full_url = self._api_url + resource
         if resource_id is not None:
@@ -276,20 +265,16 @@ class PrestaShopWebService(object):
         if options is not None:
             self._validate(options)
             full_url += "?%s" % (self._options_to_querystring(options),)
-        return self.get_with_url(full_url, parse_type=parse_type)
+        return self.get_with_url(full_url)
 
-    def get_with_url(self, url, parse_type=None):
+    def get_with_url(self, url):
         """
         Retrieve (GET) a resource from a full URL
 
         @param url: An URL which explicitly sets the resource type and ID to retrieve
-        @return: an ElementTree or dict of the response according to parse_type
-                 full response, does not remove root tags
+        @return: an ElementTree of the resource
         """
-        response = self._parse(self._execute(url, 'GET')[2], parse_type=parse_type)
-        if isinstance(response, dict):
-            response = response['prestashop']
-        return response
+        return self._parse(self._execute(url, 'GET')[2])
 
     def head(self, resource, resource_id=None, options=None):
         """
@@ -319,32 +304,26 @@ class PrestaShopWebService(object):
 
     def edit(self, resource, resource_id, content):
         """
-        Edit (PUT) a resource. The content can be a dict of values to update.
+        Edit (PUT) a resource.
 
         @param resource: type of resource to edit
         @param resource_id: id of the resource to edit
-        @param content: modified XML as string or dict of the resource.
-        If a dict is given, it will be converted to XML with the necessary root tags ie:
-        <prestashop>[[dict converted to xml]]</prestashop>
+        @param content: modified XML as string of the resource.
         @return: an ElementTree of the Webservice's response
         """
-        if isinstance(content, dict):
-            root_content = {'prestashop': content}
-            content = dict2xml.dict2xml(root_content)
         full_url = "%s%s/%s" % (self._api_url, resource, resource_id)
         return self.edit_with_url(full_url, content)
 
-    def edit_with_url(self, url, xml):
+    def edit_with_url(self, url, content):
         """
         Edit (PUT) a resource from a full URL
 
         @param url: an full url to edit a resource
-        @param xml: modified XML as string of the resource.
+        @param content: modified XML as string of the resource.
         @return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        print xml
-        return self._parse(self._execute(url, 'PUT', body=unicode_encode.encode(xml), add_headers=headers)[2])
+        return self._parse(self._execute(url, 'PUT', body=unicode_encode.encode(content), add_headers=headers)[2])
 
     def delete(self, resource, resource_ids):
         """
@@ -372,15 +351,64 @@ class PrestaShopWebService(object):
         self._execute(url, 'DELETE')
         return True
 
+
+class PrestaShopWebServiceDict(PrestaShopWebService):
+    """
+    Interacts with the PrestaShop WebService API, use dict for messages
+    """
+
+    def get_with_url(self, url):
+        """
+        Retrieve (GET) a resource from a full URL
+
+        @param url: An URL which explicitly sets the resource type and ID to retrieve
+        @return: a dict of the response. Remove root keys ['prestashop'] from the message
+        """
+        response = super(PrestaShopWebServiceDict, self).get_with_url(url)
+        return response['prestashop']
+
+    def add_with_url(self, url, content):
+        """
+        Add (POST) a resource
+
+        @param url: A full URL which for the resource type to create
+        @param content: dict of new resource values. it will be converted to XML with the necessary root tag ie:
+            <prestashop>[[dict converted to xml]]</prestashop>
+        @return: a dict of the response from the web service
+        """
+        xml_content = dict2xml.dict2xml({'prestashop': content})
+        return super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content)
+
+    def edit_with_url(self, url, content):
+        """
+        Edit (PUT) a resource from a full URL
+
+        @param url: an full url to edit a resource
+        @param content: modified dict of the resource.
+        @return: an ElementTree of the Webservice's response
+        """
+        xml_content = dict2xml.dict2xml({'prestashop': content})
+        return  super(PrestaShopWebServiceDict, self).edit_with_url(url, xml_content)
+
+    def _parse(self, content):
+        """
+        Parse the response of the webservice, assumed to be a XML in utf-8
+
+        @param content: response from the webservice
+        @return: a dict of the content
+        """
+        parsed_content = super(PrestaShopWebServiceDict, self)._parse(content)
+        return xml2dict.ET2dict(parsed_content)
+
+
 if __name__ == '__main__':
-    prestashop = PrestaShopWebService('http://localhost:8080/api',
-                                      'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',
-                                      parse_type='dict')
+    prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
+                                          'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
     #prestashop.debug = True
     from pprint import pprint
     pprint(prestashop.get(''))
     pprint(prestashop.head(''))
-    pprint(prestashop.get('addresses', 1, parse_type='xml'))
+    pprint(prestashop.get('addresses', 1))
     pprint(prestashop.get('addresses', 1))
     pprint(prestashop.get('products', 1))
 
