@@ -17,10 +17,11 @@ __author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
 __version__ = "0.3.1"
 
 import urllib
+import warnings
 import httplib2
 import xml2dict
 import dict2xml
-import unicode_encode
+import unicode_encodea
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
@@ -55,7 +56,7 @@ class PrestaShopWebService(object):
     """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.4.7.5'
+    MAX_COMPATIBLE_VERSION = '1.5.0.5'
 
     def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
@@ -138,8 +139,8 @@ class PrestaShopWebService(object):
             if not (LooseVersion(self.MIN_COMPATIBLE_VERSION) <
                     LooseVersion(version) <
                     LooseVersion(self.MAX_COMPATIBLE_VERSION)):
-                print ("This library may not be compatible with this version of PrestaShop (%s). "
-                     "Please upgrade/downgrade this library") % (version,)
+                warnings.warn(("This library may not be compatible with this version of PrestaShop (%s). "
+                     "Please upgrade/downgrade this library") % (version,))
         return True
 
     def _execute(self, url, method, body=None, add_headers=None):
