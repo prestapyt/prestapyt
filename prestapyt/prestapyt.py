@@ -403,7 +403,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         # for zero resource :
         # {'addresses': ''}
         response = super(PrestaShopWebServiceDict, self).\
-                    get(resource, options=options)
+                    search(resource, options=options)
 
         elems = dive(response, level=2)
         # when there is only 1 resource, we do not have a list in the response
