@@ -5,8 +5,6 @@ Learn more about the PrestaShop Web Service from the [Official Documentation](ht
 prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
 Similar to PSWebServiceLibrary.php, prestapyt is a thin wrapper around the PrestaShop Web Service: it takes care of making the call to your PrestaShop instance's Web Service, supports the Web Service's HTTP-based CRUD operations (handling any errors) and then returns the XML ready for you to work with in Python (as well as prestasac if you work with scala)
 
-Beta version, the post and put doesn't yet work.
-
 #Installation
 
 The easiest way to install prestapyt (needs setuptools):
