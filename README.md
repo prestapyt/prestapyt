@@ -25,18 +25,23 @@ If you do not have setuptools, download prestapyt as a .tar.gz or .zip from here
     # or
     prestashop = PrestaShopWebServiceDict('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')  # messages will be as dict
 
-    # get all addresses
-    prestashop.get('addresses')  # returns ElementTree (PrestaShopWebService) or dict (PrestaShopWebServiceDict)
+    # search / get all addresses
+    prestashop.get('addresses') # will return the same xml message than
+    prestashop.search('addresses')
+    # but when using PrestaShopWebServiceDict
+    prestashop.search('addresses') will return a list of ids
+
+    # search with filters
+    prestashop.search('addresses', options={'limit': 10})
+    prestashop.search('addresses', options={'display': '[firstname,lastname]', 'filter[id]': '[1|5]'})
+    # reference for the options : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial
 
     # get address 1
-    prestashop.get('addresses', resource_id=1)
+    prestashop.get('addresses', resource_id=1) # returns ElementTree (PrestaShopWebService) or dict (PrestaShopWebServiceDict)
     prestashop.get('addresses/1')
 
     # full url
     prestashop.get('http://localhost:8080/api/addresses/1')
-
-    #filters
-    prestashop.get('addresses', options={'limit': 10})
 
     # head
     print prestashop.head('addresses')

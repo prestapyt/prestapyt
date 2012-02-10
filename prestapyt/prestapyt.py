@@ -14,7 +14,7 @@
 """
 
 __author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 import urllib
 import httplib2
@@ -215,7 +215,7 @@ class PrestaShopWebService(object):
         Translate the dict of options to a url form
         As instance :
         {'display': '[firstname,lastname]',
-         'filter': 'filter[id]=[1|5]'}
+         'filter[id]': '[1|5]'}
         will returns :
         'display=[firstname,lastname]&filter[id]=[1|5]'
 
@@ -248,6 +248,20 @@ class PrestaShopWebService(object):
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
+
+    def search(self, resource, options=None):
+        """
+        Retrieve (GET) a resource and returns the xml with the ids.
+        Is not supposed to be called with an id or whatever in the resource line 'addresses/1'
+        But only with 'addresses' or 'products' etc...
+        This method is only a mapper to the get method without the resource_id, but semantically
+        it is more clear than "get without id" to search resources
+
+        @param resource: string of the resource to search like 'addresses', 'products'
+        @param options:  Optional dict of parameters to filter the search (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        @return: ElementTree of the xml message
+        """
+        return self.get(resource, options=options)
 
     def get(self, resource, resource_id=None, options=None):
         """
@@ -357,6 +371,49 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
     Interacts with the PrestaShop WebService API, use dict for messages
     """
 
+    def search(self, resource, options=None):
+        """
+        Retrieve (GET) a resource and returns a list of its ids.
+        Is not supposed to be called with an id or whatever in the resource line 'addresses/1'
+        But only with 'addresses' or 'products' etc...
+
+        @param resource: string of the resource to search like 'addresses', 'products'
+        @param options:  Optional dict of parameters to filter the search (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        @return: list of ids as int
+        """
+        def dive(response, level=1):
+            # not deterministic but we know that we only have one key
+            # in the response for the first 2 levels like
+            # {'addresses': {'address': ...} this method has just
+            # purpose to dive of n level in the response
+            if not response:
+                return False
+            if level > 0:
+                return dive(response[response.keys()[0]], level=level-1)
+            return response
+
+        # returned response looks like :
+        # for many resources :
+        # {'addresses': {'address': [{'attrs': {'id': '1'}, 'value': ''},
+        #                            {'attrs': {'id': '2'}, 'value': ''},
+        #                            {'attrs': {'id': '3'}, 'value': ''}]}}
+        # for one resource :
+        # {'addresses': {'address': {'attrs': {'id': '1'}, 'value': ''}}}
+        # for zero resource :
+        # {'addresses': ''}
+        response = super(PrestaShopWebServiceDict, self).\
+                    get(resource, options=options)
+
+        elems = dive(response, level=2)
+        # when there is only 1 resource, we do not have a list in the response
+        if not elems:
+            return []
+        elif isinstance(elems, list):
+            ids = [int(attr['id']) for attr in [elem['attrs'] for elem in elems]]
+        else:
+            ids = [int(elems['attrs']['id'])]
+        return ids
+
     def get_with_url(self, url):
         """
         Retrieve (GET) a resource from a full URL
@@ -405,9 +462,22 @@ if __name__ == '__main__':
     prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
                                           'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
     #prestashop.debug = True
+
     from pprint import pprint
+
     pprint(prestashop.get(''))
     pprint(prestashop.head(''))
+
+    pprint(prestashop.search('addresses'))
+    pprint(prestashop.search('addresses', options={'limit': 0}))
+    pprint(prestashop.search('addresses', options={'limit': 1}))
+    pprint(prestashop.search('products'))
+    pprint(prestashop.search('customers'))
+    pprint(prestashop.search('carts'))
+    pprint(prestashop.search('categories'))
+    pprint(prestashop.search('configurations'))
+    pprint(prestashop.search('languages'))
+
     pprint(prestashop.get('addresses', 1))
     pprint(prestashop.get('addresses', 1))
     pprint(prestashop.get('products', 1))

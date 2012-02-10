@@ -22,18 +22,12 @@ def _parse_node(node):
     tree = {}
     attrs = {}
     for attr_tag, attr_value in node.attrib.items():
-        #  specific to prestapyt,
-        #  skip href attributes
+        #  skip href attributes, not supported when converting to dict
         if attr_tag == '{http://www.w3.org/1999/xlink}href':
             continue
         attrs.update(_make_dict(attr_tag, attr_value))
 
     value = node.text.strip() if node.text is not None else ''
-    # when we have no value in the element and an id in the attribute,
-    # we returns the ids as value of the element, except for the language element
-    # because it has to stay metadata
-    if not value and attrs.get('id') and node.tag != 'language':
-        value = attrs.pop('id')
 
     if attrs:
         tree['attrs'] = attrs
