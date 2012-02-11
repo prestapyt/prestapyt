@@ -410,7 +410,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         if not elems:
             return []
         elif isinstance(elems, list):
-            ids = [int(elem['attrs']['id'] for elem in elems]
+            ids = [int(elem['attrs']['id']) for elem in elems]
         else:
             ids = [int(elems['attrs']['id'])]
         return ids
