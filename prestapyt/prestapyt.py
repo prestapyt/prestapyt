@@ -425,6 +425,25 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
         return response['prestashop']
 
+    def partial_edit(self, resource, resource_id, fields):
+        """
+        Edit (PUT) partially a resource.
+        Standard REST PUT means a full replacement of the resource.
+        Allows to edit only only some fields of the resource with 
+        a perf penalty. It will read on prestashop,
+        then modify the keys in content,
+        and write on prestashop.
+
+        @param resource: type of resource to edit
+        @param resource_id: id of the resource to edit
+        @param fields: dict containing the field name as key
+            and the values of the files to modify
+        @return: an ElementTree of the Webservice's response
+        """
+        complete_data = self.get(resource, resource_id)
+        complete_data.update(fields)
+        return self.edit_with_url(full_url, complete_data)
+
     def add_with_url(self, url, content):
         """
         Add (POST) a resource
