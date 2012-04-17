@@ -433,7 +433,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
 
         @param resource: type of resource to create
         @param fields: dict of fields of the resource to create
-        @return: response of the server
+        @return: response of the web service
         """
         blank_envelope = self.get(resource, options={'schema': 'blank'})
         complete_content = dict(blank_envelope, **fields)
@@ -452,7 +452,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @param resource_id: id of the resource to edit
         @param fields: dict containing the field name as key
             and the values of the files to modify
-        @return: an ElementTree of the Webservice's response
+        @return: response of the web service
         """
         complete_content = self.get(resource, resource_id)
         complete_content.update(fields)
