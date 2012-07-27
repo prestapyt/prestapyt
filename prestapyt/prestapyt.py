@@ -198,12 +198,21 @@ class PrestaShopWebService(object):
         """
         Check options against supported options
         (reference : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial)
+        
+        This syntax also works for options dict :
+        (refernce : http://www.prestashop.com/forums/topic/101502-webservice-api-filter-for-date-ranges/#post_id_708102)
+                {'filter[date_upd]': '>[2012-07-30]',
+                'date': '1'}
+            will returns :
+                '/?filter[date_upd]=>[2012-07-30]&date=1'
+            Note : you must consider that '>[2012-07-30]' is interpreted like 'equal or greater than' by web service
+        
         @param options: dict of options to use for the request
         @return: True if valid, else raise an error PrestaShopWebServiceError
         """
         if not isinstance(options, dict):
             raise PrestaShopWebServiceError('Parameters must be a instance of dict')
-        supported = ('filter', 'display', 'sort', 'limit', 'schema')
+        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date')
         # filter[firstname] (as e.g.) is allowed, so check only the part before a [
         unsupported = set([param.split('[')[0] for param in options]).difference(supported)
         if unsupported:
