@@ -22,6 +22,7 @@ import httplib2
 import xml2dict
 import dict2xml
 import unicode_encode
+import base64
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
@@ -98,12 +99,11 @@ class PrestaShopWebService(object):
         # use header you coders you want, otherwise, use a default
         self.headers = headers
         if self.headers is None:
-            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library'}
-        
+            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library', 'Authorization': 'Basic {0}'.format(base64.b64encode('{0}:{1}'.format(self._api_key, '')))}
+
         # init http client in the init for re-use the same connection for all call
         self.client = httplib2.Http(**self.client_args)
         # Prestashop use the key as username without password
-        self.client.add_credentials(self._api_key, False)
         self.client.follow_all_redirects = True
 
     def _check_status_code(self, status_code):
