@@ -99,6 +99,12 @@ class PrestaShopWebService(object):
         self.headers = headers
         if self.headers is None:
             self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library'}
+        
+        # init http client in the init for re-use the same connection for all call
+        self.client = httplib2.Http(**self.client_args)
+        # Prestashop use the key as username without password
+        self.client.add_credentials(self._api_key, False)
+        self.client.follow_all_redirects = True
 
     def _check_status_code(self, status_code):
         """
@@ -155,18 +161,13 @@ class PrestaShopWebService(object):
         """
         if add_headers is None: add_headers = {}
 
-        client = httplib2.Http(**self.client_args)
-        # Prestashop use the key as username without password
-        client.add_credentials(self._api_key, False)
-        client.follow_all_redirects = True
-
         if self.debug:
             print "Execute url: %s / method: %s" % (url, method)
 
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
 
-        header, content = client.request(url, method, body=body, headers=request_headers)
+        header, content = self.client.request(url, method, body=body, headers=request_headers)
         status_code = int(header['status'])
         self._check_status_code(status_code)
         self._check_version(header.get('psws-version'))
