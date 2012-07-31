@@ -99,7 +99,8 @@ class PrestaShopWebService(object):
         # use header you coders you want, otherwise, use a default
         self.headers = headers
         if self.headers is None:
-            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library', 'Authorization': 'Basic {0}'.format(base64.b64encode('{0}:{1}'.format(self._api_key, '')))}
+            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library', 
+                            'Authorization': 'Basic {0}'.format(base64.b64encode('{0}:{1}'.format(self._api_key, '')))}
 
         # init http client in the init for re-use the same connection for all call
         self.client = httplib2.Http(**self.client_args)
