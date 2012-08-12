@@ -349,7 +349,7 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'PUT', body=unicode_encode.encode(content), add_headers=headers)[2])
+        return self._parse(self._execute(unicode_encode.encode(url), 'PUT', body=unicode_encode.encode(content), add_headers=headers)[2])
 
     def delete(self, resource, resource_ids):
         """
