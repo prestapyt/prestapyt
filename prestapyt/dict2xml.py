@@ -28,7 +28,7 @@ def _process(doc, tag, tag_value):
         tag_value = ''
 
     # Create a new node for simple values
-    if isinstance(tag_value, int) or isinstance(tag_value, (str, unicode)):
+    if isinstance(tag_value, (int, float)) or isinstance(tag_value, (str, unicode)):
         return _process_simple(doc, tag, tag_value)
 
     # Return a list of nodes with same tag
