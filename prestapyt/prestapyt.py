@@ -163,19 +163,19 @@ class PrestaShopWebService(object):
         if add_headers is None: add_headers = {}
 
         if self.debug:
-            print "Execute url: %s / method: %s" % (url, method)
+            print "Execute url: %s / method: %s\nbody: %s" % (url, method, body)
 
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
 
         header, content = self.client.request(url, method, body=body, headers=request_headers)
         status_code = int(header['status'])
-        self._check_status_code(status_code)
-        self._check_version(header.get('psws-version'))
-
         if self.debug: # TODO better debug logs
             print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
                    % (status_code, header, content))
+
+        self._check_status_code(status_code)
+        self._check_version(header.get('psws-version'))
 
         return status_code, header, content
 
