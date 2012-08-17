@@ -25,6 +25,7 @@ import unicode_encode
 import base64
 
 from xml.parsers.expat import ExpatError
+from xml.dom.minidom import parseString
 from distutils.version import LooseVersion
 try:
     from xml.etree import cElementTree as ElementTree
@@ -163,7 +164,12 @@ class PrestaShopWebService(object):
         if add_headers is None: add_headers = {}
 
         if self.debug:
-            print "Execute url: %s / method: %s\nbody: %s" % (url, method, body)
+            if body:
+                xml = parseString(body)
+                pretty_body = xml.toprettyxml(indent="  ")
+            else:
+                pretty_body = body
+            print "Execute url: %s / method: %s\nbody: %s" % (url, method, pretty_body)
 
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
