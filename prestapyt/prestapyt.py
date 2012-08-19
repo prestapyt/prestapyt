@@ -164,12 +164,12 @@ class PrestaShopWebService(object):
         if add_headers is None: add_headers = {}
 
         if self.debug:
-            if body:
-                xml = parseString(body)
-                pretty_body = xml.toprettyxml(indent="  ")
-            else:
-                pretty_body = body
-            print "Execute url: %s / method: %s\nbody: %s" % (url, method, pretty_body)
+            #if body:
+            #    xml = parseString(body)
+            #    pretty_body = xml.toprettyxml(indent="  ")
+            #else:
+            #    pretty_body = body
+            print "Execute url: %s / method: %s\nbody: %s" % (url, method, body)
 
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
@@ -472,8 +472,10 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: an ElementTree of the Webservice's response
         """
         complete_content = self.get(resource, resource_id)
-        complete_content.update(fields)
-        return self.edit_with_url(full_url, complete_content)
+        for key in complete_content:
+            if fields.get(key):
+                complete_content[key].update(fields[key])
+        return self.edit(resource, complete_content)
 
     def add_with_url(self, url, content):
         """
