@@ -442,6 +442,39 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
         return response['prestashop']
 
+    def partial_add(self, resource, fields):
+        """
+        Add (POST) a resource without necessary all the content.
+        Retrieve the full empty envelope 
+        and merge the given fields in this envelope.
+
+        @param resource: type of resource to create
+        @param fields: dict of fields of the resource to create
+        @return: response of the server
+        """
+        blank_envelope = self.get(resource, options={'schema': 'blank'})
+        complete_content = dict(blank_envelope, **fields)
+        return self.add(resource, complete_content)
+
+    def partial_edit(self, resource, resource_id, fields):
+        """
+        Edit (PUT) partially a resource.
+        Standard REST PUT means a full replacement of the resource.
+        Allows to edit only only some fields of the resource with 
+        a perf penalty. It will read on prestashop,
+        then modify the keys in content,
+        and write on prestashop.
+
+        @param resource: type of resource to edit
+        @param resource_id: id of the resource to edit
+        @param fields: dict containing the field name as key
+            and the values of the files to modify
+        @return: an ElementTree of the Webservice's response
+        """
+        complete_content = self.get(resource, resource_id)
+        complete_content.update(fields)
+        return self.edit_with_url(full_url, complete_content)
+
     def add_with_url(self, url, content):
         """
         Add (POST) a resource
@@ -464,7 +497,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: an ElementTree of the Webservice's response
         """
         xml_content = dict2xml.dict2xml({'prestashop': content})
-        return  super(PrestaShopWebServiceDict, self).edit_with_url(url, xml_content)
+        return super(PrestaShopWebServiceDict, self).edit_with_url(url, xml_content)
 
     def _parse(self, content):
         """
