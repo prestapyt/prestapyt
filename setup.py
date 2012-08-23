@@ -4,7 +4,7 @@ import os
 from setuptools import setup
 
 __author__ = 'Guewen Baconnier <guewen.baconnier@gmail.com>'
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -28,7 +28,7 @@ setup(
     packages=['prestapyt'],
     keywords = 'prestashop api client rest',
     description = 'A library to access Prestashop Web Service from Python.',
-    long_description = read('README'),
+    long_description = read('README.md'),
     classifiers = [
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
