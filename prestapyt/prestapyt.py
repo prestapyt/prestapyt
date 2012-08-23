@@ -194,7 +194,7 @@ class PrestaShopWebService(object):
 
         return parsed_content
 
-    def _validate(self, options):
+    def _validate_query_options(self, options):
         """
         Check options against supported options
         (reference : http://doc.prestashop.com/display/PS14/Cheat-sheet+-+Concepts+outlined+in+this+tutorial)
@@ -210,6 +210,9 @@ class PrestaShopWebService(object):
             raise PrestaShopWebServiceError('Unsupported parameters: %s'
             % (', '.join(tuple(unsupported)),))
         return True
+
+    # _validate method is deprecated
+    _validate = _validate_query_options
 
     def _options_to_querystring(self, options):
         """
@@ -278,7 +281,7 @@ class PrestaShopWebService(object):
         if resource_id is not None:
             full_url += "/%s" % (resource_id,)
         if options is not None:
-            self._validate(options)
+            self._validate_query_options(options)
             full_url += "?%s" % (self._options_to_querystring(options),)
         return self.get_with_url(full_url)
 
@@ -304,7 +307,7 @@ class PrestaShopWebService(object):
         if resource_id is not None:
             full_url += "/%s" % (resource_id,)
         if options is not None:
-            self._validate(options)
+            self._validate_query_options(options)
             full_url += "?%s" % (self._options_to_querystring(options),)
         return self.head_with_url(full_url)
 
