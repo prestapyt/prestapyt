@@ -197,13 +197,13 @@ class PrestaShopWebService(object):
     def _validate(self, options):
         """
         Check options against supported options
-        (reference : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial)
+        (reference : http://doc.prestashop.com/display/PS14/Cheat-sheet+-+Concepts+outlined+in+this+tutorial)
         @param options: dict of options to use for the request
         @return: True if valid, else raise an error PrestaShopWebServiceError
         """
         if not isinstance(options, dict):
             raise PrestaShopWebServiceError('Parameters must be a instance of dict')
-        supported = ('filter', 'display', 'sort', 'limit', 'schema')
+        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date')
         # filter[firstname] (as e.g.) is allowed, so check only the part before a [
         unsupported = set([param.split('[')[0] for param in options]).difference(supported)
         if unsupported:
