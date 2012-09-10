@@ -100,7 +100,7 @@ class PrestaShopWebService(object):
         # use header you coders you want, otherwise, use a default
         self.headers = headers
         if self.headers is None:
-            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library', 
+            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library',
                             'Authorization': 'Basic {0}'.format(base64.b64encode('{0}:{1}'.format(self._api_key, '')))}
 
         # init http client in the init for re-use the same connection for all call
@@ -206,7 +206,7 @@ class PrestaShopWebService(object):
         """
         Check options against supported options
         (reference : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial)
-        
+
         This syntax also works for options dict :
         (refernce : http://www.prestashop.com/forums/topic/101502-webservice-api-filter-for-date-ranges/#post_id_708102)
                 {'filter[date_upd]': '>[2012-07-30]',
@@ -214,13 +214,13 @@ class PrestaShopWebService(object):
             will returns :
                 '/?filter[date_upd]=>[2012-07-30]&date=1'
             Note : you must consider that '>[2012-07-30]' is interpreted like 'equal or greater than' by web service
-        
+
         @param options: dict of options to use for the request
         @return: True if valid, else raise an error PrestaShopWebServiceError
         """
         if not isinstance(options, dict):
             raise PrestaShopWebServiceError('Parameters must be a instance of dict')
-        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date')
+        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date', 'date_filter')
         # filter[firstname] (as e.g.) is allowed, so check only the part before a [
         unsupported = set([param.split('[')[0] for param in options]).difference(supported)
         if unsupported:
@@ -242,6 +242,10 @@ class PrestaShopWebService(object):
         """
         if self.debug:
             options.update({'debug': True})
+        if options.get('date_filter'):
+            options['date'] = 1
+            for field, operator, date in options.pop('date_filter'):
+                options['filter[%s]'%field] = '%s[%s]'%(operator, date.strftime('%Y-%m-%j %H:%M:%D'))
         return urllib.urlencode(options)
 
     def add(self, resource, content):
@@ -276,7 +280,8 @@ class PrestaShopWebService(object):
         it is more clear than "get without id" to search resources
 
         @param resource: string of the resource to search like 'addresses', 'products'
-        @param options:  Optional dict of parameters to filter the search (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        @param options:  Optional dict of parameters to filter the search (one or more of
+                            'filter', 'display', 'sort', 'limit', 'schema')
         @return: ElementTree of the xml message
         """
         return self.get(resource, options=options)
@@ -445,7 +450,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
     def partial_add(self, resource, fields):
         """
         Add (POST) a resource without necessary all the content.
-        Retrieve the full empty envelope 
+        Retrieve the full empty envelope
         and merge the given fields in this envelope.
 
         @param resource: type of resource to create
@@ -460,7 +465,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         """
         Edit (PUT) partially a resource.
         Standard REST PUT means a full replacement of the resource.
-        Allows to edit only only some fields of the resource with 
+        Allows to edit only only some fields of the resource with
         a perf penalty. It will read on prestashop,
         then modify the keys in content,
         and write on prestashop.
@@ -488,7 +493,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         """
         xml_content = dict2xml.dict2xml({'prestashop': content})
         res = super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content)
-        return res['prestashop'][res['prestashop'].keys()[0]]['id'] 
+        return res['prestashop'][res['prestashop'].keys()[0]]['id']
 
     def edit_with_url(self, url, content):
         """

@@ -32,6 +32,9 @@ TODO
     #filters
     prestashop.get('addresses', options={'limit': 10})
 
+    #date filters
+    prestashop.get('addresses', options={'date_filter' : [['date_upd', '>', '2012-09-10']]})
+
     # head
     print prestashop.head('addresses')
 
