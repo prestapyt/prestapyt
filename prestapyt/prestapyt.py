@@ -208,11 +208,12 @@ class PrestaShopWebService(object):
         (reference : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial)
 
         This syntax also works for options dict :
-        (refernce : http://www.prestashop.com/forums/topic/101502-webservice-api-filter-for-date-ranges/#post_id_708102)
+        (reference : http://www.prestashop.com/forums/topic/101502-webservice-api-filter-for-date-ranges/#post_id_708102)
                 {'filter[date_upd]': '>[2012-07-30]',
                 'date': '1'}
             will returns :
                 '/?filter[date_upd]=>[2012-07-30]&date=1'
+            you may also define {'filter[date_upd]': '>[2012-07-30 16:00:00]', 'date': '1'}
             Note : you must consider that '>[2012-07-30]' is interpreted like 'equal or greater than' by web service
 
         @param options: dict of options to use for the request
