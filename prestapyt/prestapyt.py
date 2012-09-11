@@ -436,6 +436,29 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             ids = [int(elems['attrs']['id'])]
         return ids
 
+    def get(self, resource, resource_id=None, options=None):
+        """
+        Retrieve (GET) a resource
+
+        @param resource: type of resource to retrieve
+        @param resource_id: optional resource id to retrieve
+        @param options: Optional dict of parameters (one or more of
+                        'filter', 'display', 'sort', 'limit', 'schema')
+        @return: a dict of the response
+        """
+        response = super(PrestaShopWebServiceDict, self).get(resource, resource_id=resource_id, options=options)
+        if resource == 'images/products':
+            images = []
+            for image in response['image']['declination']:
+                image_id = image['attrs']['id']
+                image_url = '%s%s/%s/%s'%(self._api_url, resource, resource_id, image_id)
+                images.append({
+                    'id': image_id,
+                    'image': self._execute(image_url, 'get').content
+                })
+            return images
+        return response
+
     def get_with_url(self, url):
         """
         Retrieve (GET) a resource from a full URL
