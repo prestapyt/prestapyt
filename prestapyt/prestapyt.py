@@ -192,7 +192,9 @@ class PrestaShopWebService(object):
             raise PrestaShopWebServiceError('HTTP response is empty')
 
         try:
-            parsed_content = ElementTree.fromstring(content)
+            # We have to encode it in utf-8, because content has the XML header
+            # cf http://lxml.de/FAQ.html#why-can-t-lxml-parse-my-xml-from-unicode-strings
+            parsed_content = ElementTree.fromstring(content.encode('utf-8'))
         except ExpatError, err:
             raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
 
