@@ -244,7 +244,7 @@ class PrestaShopWebService(object):
         if options.get('date_filter'):
             options['date'] = 1
             for field, operator, date in options.pop('date_filter'):
-                options['filter[%s]'%field] = '%s[%s]'%(operator, date.strftime('%Y-%m-%j %H:%M:%D'))
+                options['filter[%s]'%field] = '%s[%s]'%(operator, date.strftime('%Y-%m-%d %H:%M:%S'))
         return urllib.urlencode(options)
 
     def add(self, resource, content):
