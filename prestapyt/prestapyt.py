@@ -183,7 +183,7 @@ class PrestaShopWebService(object):
 
     def _parse(self, content):
         """
-        Parse the response of the webservice, assumed to be a XML in utf-8
+        Parse the response of the webservice
 
         @param content: response from the webservice
         @return: an ElementTree of the content
@@ -194,7 +194,10 @@ class PrestaShopWebService(object):
         try:
             # We have to encode it in utf-8, because content has the XML header
             # cf http://lxml.de/FAQ.html#why-can-t-lxml-parse-my-xml-from-unicode-strings
-            parsed_content = ElementTree.fromstring(content.encode('utf-8'))
+            # WARNING : old versions of 'requests', for instance version 0.8.2
+            # packaged in Ubuntu 12.04, return a unicode... but more recent of
+            # requests, for instance 0.13.5 return a str in utf-8 !
+            parsed_content = ElementTree.fromstring(unicode_encode.unicode2encoding(content))
         except ExpatError, err:
             raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
 
