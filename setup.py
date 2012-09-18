@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+"""
+    Prestapyt
+
+   :copyright: (c) 2011-2012 Guewen Baconnier
+   :copyright: (c) 2011 Camptocamp SA
+   :license: AGPLv3, see LICENSE for more details
+
+"""
+
 import os
 from setuptools import setup
 

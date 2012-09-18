@@ -5,6 +5,10 @@
     Prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
     Prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
 
+   :copyright: (c) 2011-2012 Guewen Baconnier
+   :copyright: (c) 2011 Camptocamp SA
+   :license: AGPLv3, see LICENSE for more details
+
     Credits:
     Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
     Thanks to Alex Dean for his port of PSWebServiceLibrary.php to the Scala language (https://github.com/orderly/prestashop-scala-client)
