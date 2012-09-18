@@ -456,7 +456,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         """
         complete_content = self.get(resource, resource_id)
         complete_content.update(fields)
-        return self.edit_with_url(full_url, complete_content)
+        return self.edit(resource, resource_id, complete_content)
 
     def add_with_url(self, url, content):
         """
