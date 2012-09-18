@@ -168,13 +168,13 @@ class PrestaShopWebService(object):
 
         header, content = client.request(url, method, body=body, headers=request_headers)
         status_code = int(header['status'])
-        self._check_status_code(status_code)
-        self._check_version(header.get('psws-version'))
 
         if self.debug: # TODO better debug logs
             print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
                    % (status_code, header, content))
 
+        self._check_status_code(status_code)
+        self._check_version(header.get('psws-version'))
         return status_code, header, content
 
     def _parse(self, content):
