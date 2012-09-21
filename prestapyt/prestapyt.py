@@ -42,12 +42,14 @@ class PrestaShopWebServiceError(Exception):
     from prestapyt import PrestaShopWebServiceError
     """
 
-    def __init__(self, msg, error_code=None):
-        self.error_code = error_code
+    def __init__(self, msg, error_code=None, ps_error_msg='', ps_error_code=None):
         self.msg = msg
+        self.error_code = error_code
+        self.ps_error_msg = ps_error_msg
+        self.ps_error_code = ps_error_code
 
     def __str__(self):
-        return repr(self.msg)
+        return repr(self.ps_error_msg)
 
 
 class PrestaShopAuthenticationError(PrestaShopWebServiceError):
@@ -60,7 +62,7 @@ class PrestaShopWebService(object):
     """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.0.5'
+    MAX_COMPATIBLE_VERSION = '1.5.0.17'
 
     def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
@@ -104,7 +106,21 @@ class PrestaShopWebService(object):
         # init http client in the init for re-use the same connection for all call
         self.client = requests.session(**client_args)
 
-    def _check_status_code(self, status_code):
+    def _parse_error(self, xml_content):
+        """
+        Take the XML content as string and extracts the PrestaShop error
+        @param xml_content: xml content returned by the PS server as string
+        @return (prestashop_error_code, prestashop_error_message)
+        """
+        error_answer = self._parse(xml_content)
+        ps_error_code = ''
+        ps_error_msg = ''
+        if isinstance(error_answer, dict):
+            error_content = error_answer.get('prestashop', {}).get('errors', {}).get('error', {})
+        return (error_content.get('code'), error_content.get('message'))
+
+
+    def _check_status_code(self, status_code, content):
         """
         Take the status code and throw an exception if the server didn't return 200 or 201 code
         @param status_code: status code returned by the server
@@ -117,20 +133,20 @@ class PrestaShopWebService(object):
                            405: 'Method Not Allowed',
                            500: 'Internal Server Error',}
 
-        error_label = ('This call to PrestaShop Web Services failed and '
-                       'returned an HTTP status of %d. That means: %s.')
         if status_code in (200, 201):
             return True
         elif status_code == 401:
-            raise PrestaShopAuthenticationError(error_label
-                                % (status_code, message_by_code[status_code]), status_code)
+            # the content is empty for auth errors
+            raise PrestaShopAuthenticationError(message_by_code[status_code],
+                status_code)
         elif status_code in message_by_code:
-            raise PrestaShopWebServiceError(error_label
-                    % (status_code, message_by_code[status_code]), status_code)
+            ps_error_code, ps_error_msg = self._parse_error(content)
+            raise PrestaShopWebServiceError(message_by_code[status_code],
+                status_code, ps_error_msg, ps_error_code)
         else:
-            raise PrestaShopWebServiceError(("This call to PrestaShop Web Services returned "
-                                            "an unexpected HTTP status of: %d")
-                                            % (status_code,), status_code)
+            ps_error_code, ps_error_msg = self._parse_error(content)
+            raise PrestaShopWebServiceError('Unknown error', status_code,
+                ps_error_msg, ps_error_code)
 
     def _check_version(self, version):
         """
@@ -160,12 +176,12 @@ class PrestaShopWebService(object):
         if add_headers is None: add_headers = {}
 
         if self.debug:
-            #if body:
-            #    xml = parseString(body)
-            #    pretty_body = xml.toprettyxml(indent="  ")
-            #else:
-            #    pretty_body = body
-            print "Execute url: %s / method: %s\nbody: %s" % (url, method, data)
+            try:
+                xml = parseString(data)
+                pretty_body = xml.toprettyxml(indent="  ")
+            except:
+                pretty_body = data
+            print "Execute url: %s / method: %s\nbody: %s" % (url, method, pretty_body)
 
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
@@ -176,7 +192,7 @@ class PrestaShopWebService(object):
             print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
                    % (r.status_code, r.headers, r.content))
 
-        self._check_status_code(r.status_code)
+        self._check_status_code(r.status_code, r.content)
         self._check_version(r.headers.get('psws-version'))
 
         return r
