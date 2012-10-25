@@ -24,7 +24,7 @@ def _process(doc, tag, tag_value):
     if isinstance(tag_value, dict) and 'value' in tag_value.keys() == ['value']:
         tag_value = tag_value['value']
 
-    if tag_value is None:
+    if tag_value in (None, False):
         tag_value = ''
 
     # Create a new node for simple values
