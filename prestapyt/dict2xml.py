@@ -24,7 +24,7 @@ def _process(doc, tag, tag_value):
     if isinstance(tag_value, dict) and 'value' in tag_value.keys() == ['value']:
         tag_value = tag_value['value']
 
-    if tag_value in (None, False):
+    if tag_value is None:
         tag_value = ''
 
     # Create a new node for simple values
@@ -102,6 +102,12 @@ def _process_simple(doc, tag, tag_value):
     @param tag_value: tag value
     @return: node
     """
+    # This is a bit of a HACK, but it's not easy to find the right solution to the pb
+    # The pb is the following : without these 2 lines of code below,
+    # when you export an empty fields.char of OpenERP to PrestaShop, the field in
+    # PrestaShop is set to the value 'False'
+    if tag == 'language' and tag_value is False:
+        tag_value = ''
     node = doc.createElement(tag)
     node.appendChild(doc.createTextNode(unicode(tag_value)))
     return node
