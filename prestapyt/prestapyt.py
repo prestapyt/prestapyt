@@ -23,6 +23,7 @@ import xml2dict
 import dict2xml
 import unicode_encode
 import base64
+from cStringIO import StringIO
 
 from xml.parsers.expat import ExpatError
 from xml.dom.minidom import parseString
@@ -62,7 +63,7 @@ class PrestaShopWebService(object):
     """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.0.17'
+    MAX_COMPATIBLE_VERSION = '1.5.2.0'
 
     def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
@@ -163,19 +164,20 @@ class PrestaShopWebService(object):
                      "Please upgrade/downgrade this library") % (version,))
         return True
 
-    def _execute(self, url, method, data=None, add_headers=None):
+    def _execute(self, url, method, data=None, files=None, add_headers=None):
         """
         Execute a request on the PrestaShop Webservice
 
         @param url: full url to call
         @param method: GET, POST, PUT, DELETE, HEAD
-        @param body: for PUT (edit) and POST (add) only, the xml sent to PrestaShop
+        @param data: for PUT (edit) and POST (add) only, the xml sent to PrestaShop
+        @param files: should contain {'image': (img_filename, img_file)}
         @param add_headers: additional headers merged on the instance's headers
         @return: tuple with (status code, header, content) of the response
         """
         if add_headers is None: add_headers = {}
 
-        if self.debug:
+        if self.debug and data:
             try:
                 xml = parseString(data)
                 pretty_body = xml.toprettyxml(indent="  ")
@@ -186,7 +188,10 @@ class PrestaShopWebService(object):
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
 
-        r = self.client.request(method, url, data=data, headers=request_headers)
+        if not files:
+            r = self.client.request(method, url, data=data, headers=request_headers)
+        else:
+            r = self.client.request(method, url, files=files)
 
         if self.debug: # TODO better debug logs
             print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
@@ -266,29 +271,52 @@ class PrestaShopWebService(object):
                 options['filter[%s]'%field] = '%s[%s]'%(operator, date.strftime('%Y-%m-%d %H:%M:%S'))
         return urllib.urlencode(options)
 
-    def add(self, resource, content):
+    def add(self, resource, content, img_filename=None):
         """
         Add (POST) a resource. The content can be a dict of values to create.
 
         @param resource: type of resource to create
         @param content: Full XML as string or dict of new resource values.
-        If a dict is given, it will be converted to XML with the necessary root tag ie:
+            If a dict is given, it will be converted to XML with the necessary
+            root tag ie:
             <prestashop>[[dict converted to xml]]</prestashop>
-        @return: an ElementTree of the response from the web service
+            If we add an image, it should contain the binary of the image as string.
+        @param img_filename: Filename of the image with its extension as string,
+            for example 'myproduct.jpg'
+        @return: an ElementTree of the response from the web service if it's an XML
+            or True if the response from the web service is a binary
         """
-        return self.add_with_url(self._api_url + resource, content)
+        if img_filename:
+            # Check that we have a valid filename with an extension
+            if isinstance(img_filename, (str, unicode)) and 1<=len(img_filename)<= 255 and "/" not in img_filename and "\000" not in img_filename and '.' in img_filename:
+                if self.debug:
+                    print "Filename '%s' considered valid" % img_filename
+            else:
+                raise PrestaShopWebServiceError('Invalid image filename: %s'
+                            % img_filename)
 
-    def add_with_url(self, url, xml):
+        return self.add_with_url(self._api_url + resource, content, img_filename=img_filename)
+
+    def add_with_url(self, url, content, img_filename=None):
         """
         Add (POST) a resource
 
         @param url: A full URL which for the resource type to create
-        @param xml: Full XML as string of new resource.
+        @param content: a string containing the full XML of new resource or an image encoded in base64.
+        @param img_filename: a string containing the filename of the image.
         @return: an ElementTree of the response from the web service
         """
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        r = self._execute(url, 'POST', data=urllib.urlencode({'xml': xml.encode('utf-8')}), add_headers=headers)
-        return self._parse(r.content)
+        if not img_filename:
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            r = self._execute(url, 'POST', data=urllib.urlencode({'xml': content.encode('utf-8')}), add_headers=headers)
+        else:
+            img_binary = base64.decodestring(content)
+            img_file = StringIO(img_binary)
+            r = self._execute(url, 'POST', files={'image': (img_filename, img_file)})
+        if r.headers.get('content-type') and r.headers.get('content-type').startswith('image'):
+            return True
+        else:
+            return self._parse(r.content)
 
     def search(self, resource, options=None):
         """
@@ -525,18 +553,29 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
                 complete_content[key].update(fields[key])
         return self.edit(resource, complete_content)
 
-    def add_with_url(self, url, content):
+    def add_with_url(self, url, content, img_filename=None):
         """
         Add (POST) a resource
 
         @param url: A full URL which for the resource type to create
-        @param content: dict of new resource values. it will be converted to XML with the necessary root tag ie:
-            <prestashop>[[dict converted to xml]]</prestashop>
-        @return: a dict of the response from the web service
+        @param content: a string containing the full XML of new resource
+           or an image encoded in base64.
+        @param img_filename: a string containing the filename of the image.
+        @return: a dict of the response from the web service or True if the
+           response is a binary.
         """
-        xml_content = dict2xml.dict2xml({'prestashop': content})
-        res = super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content)
-        return res['prestashop'][res['prestashop'].keys()[0]]['id']
+        if isinstance(content, dict):
+            xml_content = dict2xml.dict2xml({'prestashop': content})
+        else:
+            xml_content = content
+        res = super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content, img_filename=img_filename)
+        if isinstance(res, dict) and res.get('prestashop'):
+            res_l2 = res['prestashop'].keys()
+            if 'content' in res['prestashop'].keys():
+                res_l2.remove('content')
+            return res['prestashop'][res_l2[0]]['id']
+        else:
+            return True
 
     def edit_with_url(self, url, content):
         """
