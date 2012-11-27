@@ -362,7 +362,7 @@ class PrestaShopWebService(object):
         if r.headers.get('content-type') and r.headers.get('content-type').startswith('image'):
             return r.content
         else:
-            return self._parse(self._execute(url, 'GET').content)
+            return self._parse(r.content)
 
     def head(self, resource, resource_id=None, options=None):
         """
