@@ -158,7 +158,7 @@ class PrestaShopWebService(object):
         """
         if version:
             if not (LooseVersion(self.MIN_COMPATIBLE_VERSION) <
-                    LooseVersion(version) <
+                    LooseVersion(version) <=
                     LooseVersion(self.MAX_COMPATIBLE_VERSION)):
                 warnings.warn(("This library may not be compatible with this version of PrestaShop (%s). "
                      "Please upgrade/downgrade this library") % (version,))
@@ -358,7 +358,11 @@ class PrestaShopWebService(object):
         @param url: An URL which explicitly sets the resource type and ID to retrieve
         @return: an ElementTree of the resource
         """
-        return self._parse(self._execute(url, 'GET').content)
+        r = self._execute(url, 'GET')
+        if r.headers.get('content-type') and r.headers.get('content-type').startswith('image'):
+            return r.content
+        else:
+            return self._parse(self._execute(url, 'GET').content)
 
     def head(self, resource, resource_id=None, options=None):
         """
@@ -516,7 +520,10 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: a dict of the response. Remove root keys ['prestashop'] from the message
         """
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
-        return response['prestashop']
+        if isinstance(response, dict):
+            return response['prestashop']
+        else:
+            return response
 
     def partial_add(self, resource, fields):
         """
