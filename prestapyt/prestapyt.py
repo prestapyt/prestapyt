@@ -194,8 +194,12 @@ class PrestaShopWebService(object):
             r = self.client.request(method, url, files=files)
 
         if self.debug: # TODO better debug logs
-            print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
-                   % (r.status_code, r.headers, r.content))
+            print ("Response code: %s\nResponse headers:\n%s\n"
+                   % (r.status_code, r.headers))
+            if r.headers.get('content-type') and r.headers.get('content-type').startswith('image'):
+                print "Response body: Image in binary format\n"
+            else:
+                print "Response body:\n%s\n" % r.content
 
         self._check_status_code(r.status_code, r.content)
         self._check_version(r.headers.get('psws-version'))
@@ -500,7 +504,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: a dict of the response
         """
         response = super(PrestaShopWebServiceDict, self).get(resource, resource_id=resource_id, options=options)
-        if resource == 'images/products':
+        if resource == 'images/products' and resource_id:
             images = []
             for image in response['image']['declination']:
                 image_id = image['attrs']['id']
