@@ -63,7 +63,7 @@ class PrestaShopWebService(object):
     """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.2.0'
+    MAX_COMPATIBLE_VERSION = '1.5.4.0'
 
     def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
@@ -177,7 +177,9 @@ class PrestaShopWebService(object):
         """
         if add_headers is None: add_headers = {}
 
-        if self.debug and data:
+        # Don't print when method = POST, because it contains an encoded URL
+        # The print for POST is in the method add_with_url()
+        if self.debug and data and method <> 'POST':
             try:
                 xml = parseString(data)
                 pretty_body = xml.toprettyxml(indent="  ")
@@ -312,6 +314,14 @@ class PrestaShopWebService(object):
         """
         if not img_filename:
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            if self.debug and content:
+                try:
+                    xml = parseString(content)
+                    pretty_body = xml.toprettyxml(indent="  ")
+                except:
+                    pretty_body = content
+                print "Execute url: %s / method: POST\nbody: %s" % (url, pretty_body)
+
             r = self._execute(url, 'POST', data=urllib.urlencode({'xml': content.encode('utf-8')}), add_headers=headers)
         else:
             img_binary = base64.decodestring(content)
