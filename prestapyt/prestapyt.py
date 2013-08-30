@@ -207,7 +207,7 @@ class PrestaShopWebService(object):
         """
         if not isinstance(options, dict):
             raise PrestaShopWebServiceError('Parameters must be a instance of dict')
-        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date')
+        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date', 'id_shop')
         # filter[firstname] (as e.g.) is allowed, so check only the part before a [
         unsupported = set([param.split('[')[0] for param in options]).difference(supported)
         if unsupported:
