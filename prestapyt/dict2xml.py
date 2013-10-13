@@ -106,10 +106,11 @@ def _process_simple(doc, tag, tag_value):
     node.appendChild(doc.createTextNode(unicode(tag_value)))
     return node
 
-def dict2xml(data):
+def dict2xml(data, encoding='UTF-8'):
     """
     Generate a xml string from a dict
-    @param data: data as a dict
+    @param data:     data as a dict
+    @param encoding: data encoding, default: UTF-8
     @return: the data as a xml string
     """
     doc = getDOMImplementation().createDocument(None, None, None)
@@ -117,7 +118,7 @@ def dict2xml(data):
         raise Exception('Only one root node allowed')
     root, _ = _process_complex(doc, data.items())
     doc.appendChild(root[0])
-    return doc.toxml()
+    return doc.toxml(encoding)
 
 
 if __name__ == '__main__':
