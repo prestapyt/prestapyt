@@ -83,6 +83,8 @@ class PrestaShopWebService(object):
         """
         if client_args is None: client_args = {}
 
+        self.http_client = None
+
         # required to hit prestashop
         self._api_url = api_url
         self._api_key = api_key
@@ -159,10 +161,14 @@ class PrestaShopWebService(object):
         """
         if add_headers is None: add_headers = {}
 
-        client = httplib2.Http(**self.client_args)
-        # Prestashop use the key as username without password
-        client.add_credentials(self._api_key, False)
-        client.follow_all_redirects = True
+        if self.http_client is None:
+            client = httplib2.Http(**self.client_args)
+            # Prestashop use the key as username without password
+            client.add_credentials(self._api_key, False)
+            client.follow_all_redirects = True
+            self.http_client = client
+        else:
+            client = self.http_client
 
         if self.debug:
             print "Execute url: %s / method: %s" % (url, method)
