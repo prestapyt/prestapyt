@@ -255,7 +255,7 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the response from the web service
         """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
+        return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml.encode('utf-8')}), add_headers=headers)[2])
 
     def search(self, resource, options=None):
         """
