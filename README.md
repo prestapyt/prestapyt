@@ -3,7 +3,7 @@ Prestapyt
 
 prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
 
-Learn more about the PrestaShop Web Service from the [Official Prestashop Documentation]. 
+Learn more about the PrestaShop Web Service from the [Official Prestashop Documentation].
 
 prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
 
@@ -76,6 +76,13 @@ Usage
     # get a blank xml
     prestashop.get('addresses', options={'schema': 'blank'})
 
+    # add product image
+    file_name = 'sample.jpg'
+    fd        = io.open(file_name, "rb")
+    content   = fd.read()
+    fd.close()
+
+    prestashop.add('/images/products/123', files=[('image', file_name, content)])
 
 API Documentation
 =================
