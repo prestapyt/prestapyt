@@ -3,7 +3,7 @@
 """
     Prestapyt
 
-   :copyright: (c) 2011-2012 Guewen Baconnier
+   :copyright: (c) 2011-2013 Guewen Baconnier
    :copyright: (c) 2011 Camptocamp SA
    :license: AGPLv3, see LICENSE for more details
 
@@ -11,6 +11,7 @@
 
 import os
 from setuptools import setup
+import prestapyt
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -18,7 +19,7 @@ def read(fname):
 setup(
     # Basic package information.
     name = 'prestapyt',
-    version = prestapyt.__version__,
+    version = prestapyt.prestapyt.__version__,
 
     # Packaging options.
     include_package_data = True,
