@@ -23,6 +23,7 @@ __version__ = "0.5.3"
 import urllib
 import warnings
 import httplib2
+import mimetypes
 import xml2dict
 import dict2xml
 import unicode_encode
@@ -60,7 +61,7 @@ class PrestaShopWebService(object):
     """
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.0.5'
+    MAX_COMPATIBLE_VERSION = '1.5.5.0'
 
     def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
         """
@@ -82,6 +83,8 @@ class PrestaShopWebService(object):
         @param client_args: Dict of extra arguments for HTTP Client (httplib2) as instance {'timeout': 10.0}
         """
         if client_args is None: client_args = {}
+
+        self.http_client = None
 
         # required to hit prestashop
         self._api_url = api_url
@@ -159,10 +162,11 @@ class PrestaShopWebService(object):
         """
         if add_headers is None: add_headers = {}
 
-        client = httplib2.Http(**self.client_args)
-        # Prestashop use the key as username without password
-        client.add_credentials(self._api_key, False)
-        client.follow_all_redirects = True
+        if self.http_client is None:
+            self.http_client = httplib2.Http(**self.client_args)
+            # Prestashop use the key as username without password
+            self.http_client.add_credentials(self._api_key, False)
+            self.http_client.follow_all_redirects = True
 
         if self.debug:
             print "Execute url: %s / method: %s" % (url, method)
@@ -170,7 +174,7 @@ class PrestaShopWebService(object):
         request_headers = self.headers.copy()
         request_headers.update(add_headers)
 
-        header, content = client.request(url, method, body=body, headers=request_headers)
+        header, content = self.http_client.request(url, method, body=body, headers=request_headers)
         status_code = int(header['status'])
 
         if self.debug: # TODO better debug logs
@@ -234,7 +238,7 @@ class PrestaShopWebService(object):
             options.update({'debug': True})
         return urllib.urlencode(options)
 
-    def add(self, resource, content):
+    def add(self, resource, content=None, files=None):
         """
         Add (POST) a resource. The content can be a dict of values to create.
 
@@ -242,20 +246,28 @@ class PrestaShopWebService(object):
         @param content: Full XML as string or dict of new resource values.
         If a dict is given, it will be converted to XML with the necessary root tag ie:
             <prestashop>[[dict converted to xml]]</prestashop>
+        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
         @return: an ElementTree of the response from the web service
         """
-        return self.add_with_url(self._api_url + resource, content)
+        return self.add_with_url(self._api_url + resource, content, files)
 
-    def add_with_url(self, url, xml):
+    def add_with_url(self, url, xml=None, files=None):
         """
         Add (POST) a resource
 
         @param url: A full URL which for the resource type to create
         @param xml: Full XML as string of new resource.
+        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
         @return: an ElementTree of the response from the web service
         """
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
+        if files is not None:
+            headers, body = self.encode_multipart_formdata(files)
+            return self._parse(self._execute(url, 'POST', body=body, add_headers=headers)[2])
+        elif xml is not None:
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            return self._parse(self._execute(url, 'POST', body=urllib.urlencode({'xml': xml}), add_headers=headers)[2])
+        else:
+            raise PrestaShopWebServiceError('Undefined data.')
 
     def search(self, resource, options=None):
         """
@@ -373,6 +385,36 @@ class PrestaShopWebService(object):
         self._execute(url, 'DELETE')
         return True
 
+    def encode_multipart_formdata(self, files):
+        """
+        Encode files to an http multipart/form-data.
+
+        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
+        @return: headers and body.
+        """
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+        CRLF     = '\r\n'
+        L        = []
+        for (key, filename, value) in files:
+            L.append('--' + BOUNDARY)
+            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+            L.append('Content-Type: %s' % self.get_content_type(filename))
+            L.append('')
+            L.append(value)
+        L.append('--' + BOUNDARY + '--')
+        L.append('')
+        body     = CRLF.join(L)
+        headers  = {'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY}
+        return headers, body
+
+    def get_content_type(self, filename):
+        """
+        Retrieve filename mimetype.
+
+        @param filename: file name.
+        @return: mimetype.
+        """
+        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
     """
@@ -432,17 +474,21 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
         return response['prestashop']
 
-    def add_with_url(self, url, content):
+    def add_with_url(self, url, content=None, files=None):
         """
         Add (POST) a resource
 
         @param url: A full URL which for the resource type to create
         @param content: dict of new resource values. it will be converted to XML with the necessary root tag ie:
             <prestashop>[[dict converted to xml]]</prestashop>
+        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
         @return: a dict of the response from the web service
         """
-        xml_content = dict2xml.dict2xml({'prestashop': content})
-        return super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content)
+        if content is not None and isinstance(content, dict):
+            xml_content = dict2xml.dict2xml({'prestashop': content})
+        else:
+            xml_content = content
+        return super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content, files)
 
     def edit_with_url(self, url, content):
         """
