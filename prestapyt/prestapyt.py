@@ -210,6 +210,8 @@ class PrestaShopWebService(object):
             parsed_content = ElementTree.fromstring(content)
         except ExpatError, err:
             raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
+        except ElementTree.ParseError as e:
+            raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s. %s' % (e, content[:512]))
 
         return parsed_content
 
