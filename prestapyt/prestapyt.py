@@ -107,7 +107,7 @@ class PrestaShopWebService(object):
         if self.headers is None:
             self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library'}
 
-    def _check_status_code(self, status_code):
+    def _check_status_code(self, status_code, content):
         """
         Take the status code and throw an exception if the server didn't return 200 or 201 code
         @param status_code: status code returned by the server
@@ -119,21 +119,15 @@ class PrestaShopWebService(object):
                            404: 'Not Found',
                            405: 'Method Not Allowed',
                            500: 'Internal Server Error',}
-
-        error_label = ('This call to PrestaShop Web Services failed and '
-                       'returned an HTTP status of %d. That means: %s.')
+        error_label = ('PrestaShop error: %d %s. %s')
         if status_code in (200, 201):
             return True
         elif status_code == 401:
-            raise PrestaShopAuthenticationError(error_label
-                                % (status_code, message_by_code[status_code]), status_code)
+            raise PrestaShopAuthenticationError(error_label % (status_code, message_by_code[status_code], ''), status_code)
         elif status_code in message_by_code:
-            raise PrestaShopWebServiceError(error_label
-                    % (status_code, message_by_code[status_code]), status_code)
+            raise PrestaShopWebServiceError(error_label % (status_code, message_by_code[status_code], self._parse_error(content)), status_code)
         else:
-            raise PrestaShopWebServiceError(("This call to PrestaShop Web Services returned "
-                                            "an unexpected HTTP status of: %d")
-                                            % (status_code,), status_code)
+            raise PrestaShopWebServiceError(error_label % (status_code, message_by_code[status_code], self._parse_error(content)), status_code)
 
     def _check_version(self, version):
         """
@@ -149,6 +143,23 @@ class PrestaShopWebService(object):
                 warnings.warn(("This library may not be compatible with this version of PrestaShop (%s). "
                      "Please upgrade/downgrade this library") % (version,))
         return True
+
+    def _parse_error(self, xml_content):
+        """
+        Take the XML content as string and extracts the PrestaShop error
+        @param xml_content: xml content returned by the PS server as string
+        @return prestashop_error_message
+        """
+        answer    = self._parse(xml_content)
+        error_msg = ''
+        if isinstance(answer, dict):
+            errors = answer.get('prestashop', {}).get('errors', {}).get('error', {})
+            if isinstance(errors, list):
+                for error in errors:
+                    error_msg += '%s ' % (error.get('message'))
+            elif isinstance(errors, dict):
+                error_msg = errors.get('message')
+        return error_msg
 
     def _execute(self, url, method, body=None, add_headers=None):
         """
@@ -181,7 +192,7 @@ class PrestaShopWebService(object):
             print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
                    % (status_code, header, content))
 
-        self._check_status_code(status_code)
+        self._check_status_code(status_code, content)
         self._check_version(header.get('psws-version'))
         return status_code, header, content
 
