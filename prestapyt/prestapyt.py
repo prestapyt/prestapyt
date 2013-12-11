@@ -177,6 +177,8 @@ class PrestaShopWebService(object):
             self.http_client = httplib2.Http(**self.client_args)
             # Prestashop use the key as username without password
             self.http_client.add_credentials(self._api_key, False)
+            if hasattr(self.http_client, "set_auth_type"):
+                self.http_client.set_auth_type("basic")
             self.http_client.follow_all_redirects = True
 
         if self.debug:
