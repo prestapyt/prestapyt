@@ -18,7 +18,7 @@ setup(
 	include_package_data = True,
 
 	# Package dependencies.
-	install_requires = ['httplib2',],
+	install_requires = ['httplib2', 'requests==0.14.2'],
 
 	# Metadata for PyPI.
 	author = 'Guewen Baconnier',
