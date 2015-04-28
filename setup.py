@@ -11,15 +11,18 @@
 
 import os
 from setuptools import setup
-import prestapyt
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+with open('prestapyt/version.py') as f:
+    # execute the file so __version__ is in the current scope
+    exec(f.read())
+
 setup(
     # Basic package information.
     name = 'prestapyt',
-    version = prestapyt.prestapyt.__version__,
+    version = __version__,
 
     # Packaging options.
     include_package_data = True,

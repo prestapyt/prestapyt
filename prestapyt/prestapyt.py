@@ -17,9 +17,6 @@
     Questions, comments? guewen.baconnier@gmail.com
 """
 
-__author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
-__version__ = "0.6.1"
-
 import urllib
 import warnings
 import httplib2
@@ -34,6 +31,8 @@ try:
     from xml.etree import cElementTree as ElementTree
 except ImportError, e:
     from xml.etree import ElementTree
+
+from .version import __author__, __version__
 
 
 class PrestaShopWebServiceError(Exception):
