@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    Prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
-    Prestapyt is a direct port of the PrestaShop PHP API Client, PSWebServiceLibrary.php
+    Prestapyt is a library for Python to interact with the PrestaShop's Web
+    Service API.  Prestapyt is a direct port of the PrestaShop PHP API Client,
+    PSWebServiceLibrary.php
 
    :copyright: (c) 2011-2012 Guewen Baconnier
    :copyright: (c) 2011 Camptocamp SA
@@ -19,11 +20,10 @@
 
 import urllib
 import warnings
-import httplib2
+import requests
 import mimetypes
 import xml2dict
 import dict2xml
-import unicode_encode
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
@@ -32,7 +32,7 @@ try:
 except ImportError, e:
     from xml.etree import ElementTree
 
-from .version import __author__, __version__
+from .version import __author__, __version__  # noqa
 
 
 class PrestaShopWebServiceError(Exception):
@@ -42,12 +42,15 @@ class PrestaShopWebServiceError(Exception):
     from prestapyt import PrestaShopWebServiceError
     """
 
-    def __init__(self, msg, error_code=None):
-        self.error_code = error_code
+    def __init__(self, msg, error_code=None,
+                 ps_error_msg='', ps_error_code=None):
         self.msg = msg
+        self.error_code = error_code
+        self.ps_error_msg = ps_error_msg
+        self.ps_error_code = ps_error_code
 
     def __str__(self):
-        return repr(self.msg)
+        return repr(self.ps_error_msg or self.msg)
 
 
 class PrestaShopAuthenticationError(PrestaShopWebServiceError):
@@ -62,7 +65,7 @@ class PrestaShopWebService(object):
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
     MAX_COMPATIBLE_VERSION = '1.5.9.0'
 
-    def __init__(self, api_url, api_key, debug=False, headers=None, client_args=None):
+    def __init__(self, api_url, api_key, debug=False, session=None):
         """
         Create an instance of PrestashopWebService.
 
@@ -70,21 +73,22 @@ class PrestaShopWebService(object):
         from prestapyt import PrestaShopWebService, PrestaShopWebServiceError
 
         try:
-            prestashop = PrestaShopWebService.new('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
-        rescue PrestaShopWebServiceError, e:
-            print str(e)
+            prestashop = PrestaShopWebService(
+                'http://localhost:8080/api',
+                'BVWPFFYBT97WKM959D7AVVD0M4815Y1L'
+            )
+        except PrestaShopWebServiceError as err:
             ...
+
+        Verbose logging of the requests/responses can be activated
+        using configuring logging, see on the requests doc:
+        http://docs.python-requests.org/en/master/api/#api-changes
 
         @param api_url: Root URL for the shop
         @param api_key: Authentification key
-        @param debug: Debug mode Activated (True) or deactivated (False)
-        @param headers: Custom header, is a dict accepted by httplib2 as instance {'User-Agent': 'Schkounitz'}
-        @param client_args: Dict of extra arguments for HTTP Client (httplib2) as instance {'timeout': 10.0}
+        @param debug: activate PrestaShop's webservice debug mode
+        @param session: pass a custom requests Session
         """
-        if client_args is None: client_args = {}
-
-        self.http_client = None
-
         # required to hit prestashop
         self._api_url = api_url
         self._api_key = api_key
@@ -99,16 +103,36 @@ class PrestaShopWebService(object):
 
         # optional arguments
         self.debug = debug
-        self.client_args = client_args
 
-        # use header you coders you want, otherwise, use a default
-        self.headers = headers
-        if self.headers is None:
-            self.headers = {'User-agent': 'Prestapyt: Python Prestashop Library'}
+        if session is None:
+            self.client = requests.Session()
+        else:
+            self.client = session
+
+        if not self.client.auth:
+            self.client.auth = (api_key, '')
+
+    def _parse_error(self, xml_content):
+        """
+        Take the XML content as string and extracts the PrestaShop error
+
+        @param xml_content: xml content returned by the PS server as string
+        @return (prestashop_error_code, prestashop_error_message)
+        """
+        error_answer = self._parse(xml_content)
+        if isinstance(error_answer, dict):
+            error_content = (error_answer
+                             .get('prestashop', {})
+                             .get('errors', {})
+                             .get('error', {})
+                             )
+        return (error_content.get('code'), error_content.get('message'))
 
     def _check_status_code(self, status_code, content):
         """
-        Take the status code and throw an exception if the server didn't return 200 or 201 code
+        Take the status code and throw an exception if the server didn't return
+        200 or 201 code
+
         @param status_code: status code returned by the server
         @return: True or raise an exception PrestaShopWebServiceError
         """
@@ -117,16 +141,32 @@ class PrestaShopWebService(object):
                            401: 'Unauthorized',
                            404: 'Not Found',
                            405: 'Method Not Allowed',
-                           500: 'Internal Server Error',}
-        error_label = ('PrestaShop error: %d %s. %s')
+                           500: 'Internal Server Error',
+                           }
         if status_code in (200, 201):
             return True
         elif status_code == 401:
-            raise PrestaShopAuthenticationError(error_label % (status_code, message_by_code[status_code], ''), status_code)
+            # the content is empty for auth errors
+            raise PrestaShopAuthenticationError(
+                message_by_code[status_code],
+                status_code
+            )
         elif status_code in message_by_code:
-            raise PrestaShopWebServiceError(error_label % (status_code, message_by_code[status_code], self._parse_error(content)), status_code)
+            ps_error_code, ps_error_msg = self._parse_error(content)
+            raise PrestaShopWebServiceError(
+                message_by_code[status_code],
+                status_code,
+                ps_error_msg=ps_error_msg,
+                ps_error_code=ps_error_code,
+            )
         else:
-            raise PrestaShopWebServiceError(error_label % (status_code, message_by_code[status_code], self._parse_error(content)), status_code)
+            ps_error_code, ps_error_msg = self._parse_error(content)
+            raise PrestaShopWebServiceError(
+                'Unknown error',
+                status_code,
+                ps_error_msg=ps_error_msg,
+                ps_error_code=ps_error_code,
+                )
 
     def _check_version(self, version):
         """
@@ -143,63 +183,38 @@ class PrestaShopWebService(object):
                      "Please upgrade/downgrade this library") % (version,))
         return True
 
-    def _parse_error(self, xml_content):
-        """
-        Take the XML content as string and extracts the PrestaShop error
-        @param xml_content: xml content returned by the PS server as string
-        @return prestashop_error_message
-        """
-        answer    = self._parse(xml_content)
-        error_msg = ''
-        if isinstance(answer, dict):
-            errors = answer.get('prestashop', {}).get('errors', {}).get('error', {})
-            if isinstance(errors, list):
-                for error in errors:
-                    error_msg += '%s ' % (error.get('message'))
-            elif isinstance(errors, dict):
-                error_msg = errors.get('message')
-        return error_msg
-
-    def _execute(self, url, method, body=None, add_headers=None):
+    def _execute(self, url, method, data=None, add_headers=None):
         """
         Execute a request on the PrestaShop Webservice
 
         @param url: full url to call
         @param method: GET, POST, PUT, DELETE, HEAD
-        @param body: for PUT (edit) and POST (add) only, the xml sent to PrestaShop
+        @param data: for PUT (edit) and POST (add) only,
+                     the xml sent to PrestaShop
         @param add_headers: additional headers merged on the instance's headers
         @return: tuple with (status code, header, content) of the response
         """
-        if add_headers is None: add_headers = {}
+        if add_headers is None:
+            add_headers = {}
 
-        if self.http_client is None:
-            self.http_client = httplib2.Http(**self.client_args)
-            # Prestashop use the key as username without password
-            self.http_client.add_credentials(self._api_key, False)
-            if hasattr(self.http_client, "set_auth_type"):
-                self.http_client.set_auth_type("basic")
-            self.http_client.follow_all_redirects = True
-
-        if self.debug:
-            print "Execute url: %s / method: %s" % (url, method)
-
-        request_headers = self.headers.copy()
+        request_headers = self.client.headers.copy()
         request_headers.update(add_headers)
 
-        header, content = self.http_client.request(url, method, body=body, headers=request_headers)
-        status_code = int(header['status'])
+        response = self.client.request(
+            method,
+            url,
+            data=data,
+            headers=request_headers,
+        )
 
-        if self.debug: # TODO better debug logs
-            print ("Response code: %s\nResponse headers:\n%s\nResponse body:\n%s"
-                   % (status_code, header, content))
+        self._check_status_code(response.status_code, response.content)
+        self._check_version(response.headers.get('psws-version'))
 
-        self._check_status_code(status_code, content)
-        self._check_version(header.get('psws-version'))
-        return status_code, header, content
+        return response
 
     def _parse(self, content):
         """
-        Parse the response of the webservice, assumed to be a XML in utf-8
+        Parse the response of the webservice
 
         @param content: response from the webservice
         @return: an ElementTree of the content
@@ -210,9 +225,14 @@ class PrestaShopWebService(object):
         try:
             parsed_content = ElementTree.fromstring(content)
         except ExpatError, err:
-            raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s' % (err,))
+            raise PrestaShopWebServiceError(
+                'HTTP XML response is not parsable : %s' % (err,)
+            )
         except ElementTree.ParseError as e:
-            raise PrestaShopWebServiceError('HTTP XML response is not parsable : %s. %s' % (e, content[:512]))
+            raise PrestaShopWebServiceError(
+                'HTTP XML response is not parsable : %s. %s' %
+                (e, content[:512])
+            )
 
         return parsed_content
 
@@ -275,13 +295,16 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the response from the web service
         """
         if files is not None:
-            headers, body = self.encode_multipart_formdata(files)
-            return self._parse(self._execute(url, 'POST', body=body, add_headers=headers)[2])
+            headers, data = self.encode_multipart_formdata(files)
+            response = self._execute(url, 'POST', data=data,
+                                     add_headers=headers)
         elif xml is not None:
             headers = {'Content-Type': 'text/xml'}
-            return self._parse(self._execute(url, 'POST', body=xml, add_headers=headers)[2])
+            response = self._execute(url, 'POST', data=xml,
+                                     add_headers=headers)
         else:
             raise PrestaShopWebServiceError('Undefined data.')
+        return self._parse(response.content)
 
     def search(self, resource, options=None):
         """
@@ -322,7 +345,7 @@ class PrestaShopWebService(object):
         @param url: An URL which explicitly sets the resource type and ID to retrieve
         @return: an ElementTree of the resource
         """
-        return self._parse(self._execute(url, 'GET')[2])
+        return self._parse(self._execute(url, 'GET').content)
 
     def head(self, resource, resource_id=None, options=None):
         """
@@ -348,18 +371,17 @@ class PrestaShopWebService(object):
         @param url: An URL which explicitly sets the resource type and ID to retrieve
         @return: the header of the response as a dict
         """
-        return self._execute(url, 'HEAD')[1]
+        return self._execute(url, 'HEAD').headers
 
-    def edit(self, resource, resource_id, content):
+    def edit(self, resource, content):
         """
         Edit (PUT) a resource.
 
         @param resource: type of resource to edit
-        @param resource_id: id of the resource to edit
         @param content: modified XML as string of the resource.
         @return: an ElementTree of the Webservice's response
         """
-        full_url = "%s%s/%s" % (self._api_url, resource, resource_id)
+        full_url = "%s%s" % (self._api_url, resource)
         return self.edit_with_url(full_url, content)
 
     def edit_with_url(self, url, content):
@@ -371,7 +393,8 @@ class PrestaShopWebService(object):
         @return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'text/xml'}
-        return self._parse(self._execute(url, 'PUT', body=content, add_headers=headers)[2])
+        response = self._execute(url, 'PUT', data=content, add_headers=headers)
+        return self._parse(response.content)
 
     def delete(self, resource, resource_ids):
         """
@@ -417,8 +440,8 @@ class PrestaShopWebService(object):
             L.append(value)
         L.append('--' + BOUNDARY + '--')
         L.append('')
-        body     = CRLF.join(L)
-        headers  = {'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY}
+        body = CRLF.join(L)
+        headers = {'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY}
         return headers, body
 
     def get_content_type(self, filename):
@@ -429,6 +452,7 @@ class PrestaShopWebService(object):
         @return: mimetype.
         """
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
     """
@@ -486,7 +510,45 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: a dict of the response. Remove root keys ['prestashop'] from the message
         """
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
-        return response['prestashop']
+        if isinstance(response, dict):
+            return response['prestashop']
+        else:
+            return response
+
+    def partial_add(self, resource, fields):
+        """
+        Add (POST) a resource without necessary all the content.
+        Retrieve the full empty envelope
+        and merge the given fields in this envelope.
+
+        @param resource: type of resource to create
+        @param fields: dict of fields of the resource to create
+        @return: response of the server
+        """
+        blank_envelope = self.get(resource, options={'schema': 'blank'})
+        complete_content = dict(blank_envelope, **fields)
+        return self.add(resource, complete_content)
+
+    def partial_edit(self, resource, resource_id, fields):
+        """
+        Edit (PUT) partially a resource.
+        Standard REST PUT means a full replacement of the resource.
+        Allows to edit only only some fields of the resource with
+        a perf penalty. It will read on prestashop,
+        then modify the keys in content,
+        and write on prestashop.
+
+        @param resource: type of resource to edit
+        @param resource_id: id of the resource to edit
+        @param fields: dict containing the field name as key
+            and the values of the files to modify
+        @return: an ElementTree of the Webservice's response
+        """
+        complete_content = self.get(resource, resource_id)
+        for key in complete_content:
+            if fields.get(key):
+                complete_content[key].update(fields[key])
+        return self.edit(resource, complete_content)
 
     def add_with_url(self, url, content=None, files=None):
         """
@@ -513,7 +575,8 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         @return: an ElementTree of the Webservice's response
         """
         xml_content = dict2xml.dict2xml({'prestashop': content})
-        return  super(PrestaShopWebServiceDict, self).edit_with_url(url, xml_content)
+        _super = super(PrestaShopWebServiceDict, self)
+        return _super.edit_with_url(url, xml_content)
 
     def _parse(self, content):
         """
@@ -529,7 +592,6 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
 if __name__ == '__main__':
     prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
                                           'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
-    #prestashop.debug = True
 
     from pprint import pprint
 
