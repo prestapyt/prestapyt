@@ -126,6 +126,8 @@ class PrestaShopWebService(object):
                              .get('errors', {})
                              .get('error', {})
                              )
+            if isinstance(error_content, list):
+                error_content = error_content[0]
         return (error_content.get('code'), error_content.get('message'))
 
     def _check_status_code(self, status_code, content):
