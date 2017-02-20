@@ -2,20 +2,22 @@
 # -*- coding: utf-8 -*-
 
 """
-    Prestapyt is a library for Python to interact with the PrestaShop's Web
-    Service API.  Prestapyt is a direct port of the PrestaShop PHP API Client,
-    PSWebServiceLibrary.php
+Prestapyt is a Python library to interact with PrestaShop's Web Service API.
 
-   :copyright: (c) 2011-2012 Guewen Baconnier
-   :copyright: (c) 2011 Camptocamp SA
-   :license: AGPLv3, see LICENSE for more details
+Prestapyt is a direct port of the PrestaShop PHP API Client,
+PSWebServiceLibrary.php
 
-    Credits:
-    Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
-    Thanks to Alex Dean for his port of PSWebServiceLibrary.php to the Scala language (https://github.com/orderly/prestashop-scala-client)
-    from which I also inspired my library.
+:copyright: (c) 2011-2012 Guewen Baconnier
+:copyright: (c) 2011 Camptocamp SA
+:license: AGPLv3, see LICENSE for more details
 
-    Questions, comments? guewen.baconnier@gmail.com
+Credits:
+Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
+Thanks to Alex Dean for his port of PSWebServiceLibrary.php
+to the Scala language (https://github.com/orderly/prestashop-scala-client)
+from which I also inspired my library.
+
+Questions, comments? guewen.baconnier@gmail.com
 """
 
 import urllib
@@ -36,7 +38,7 @@ from .version import __author__, __version__  # noqa
 
 
 class PrestaShopWebServiceError(Exception):
-    """Generic PrestaShop WebServices error class
+    """Generic PrestaShop WebServices error class.
 
     To catch these, you need to import it in you code e.g. :
     from prestapyt import PrestaShopWebServiceError
@@ -44,23 +46,23 @@ class PrestaShopWebServiceError(Exception):
 
     def __init__(self, msg, error_code=None,
                  ps_error_msg='', ps_error_code=None):
+        """Intiliaze webservice error."""
         self.msg = msg
         self.error_code = error_code
         self.ps_error_msg = ps_error_msg
         self.ps_error_code = ps_error_code
 
     def __str__(self):
+        """Include custom msg."""
         return repr(self.ps_error_msg or self.msg)
 
 
-class PrestaShopAuthenticationError(PrestaShopWebServiceError):
-    pass
+class PrestaShopAuthenticationError(PrestaShopWebServiceError): # noqa
+    pass # noqa
 
 
 class PrestaShopWebService(object):
-    """
-    Interacts with the PrestaShop WebService API, use XML for messages
-    """
+    """Interact with the PrestaShop WebService API, use XML for messages."""
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
     MAX_COMPATIBLE_VERSION = '1.5.9.0'
@@ -84,10 +86,10 @@ class PrestaShopWebService(object):
         using configuring logging, see on the requests doc:
         http://docs.python-requests.org/en/master/api/#api-changes
 
-        @param api_url: Root URL for the shop
-        @param api_key: Authentification key
-        @param debug: activate PrestaShop's webservice debug mode
-        @param session: pass a custom requests Session
+        :param api_url: Root URL for the shop
+        :param api_key: Authentification key
+        :param debug: activate PrestaShop's webservice debug mode
+        :param session: pass a custom requests Session
         """
         # required to hit prestashop
         self._api_url = api_url
@@ -113,11 +115,10 @@ class PrestaShopWebService(object):
             self.client.auth = (api_key, '')
 
     def _parse_error(self, xml_content):
-        """
-        Take the XML content as string and extracts the PrestaShop error
+        """Take the XML content as string and extract the PrestaShop error.
 
-        @param xml_content: xml content returned by the PS server as string
-        @return (prestashop_error_code, prestashop_error_message)
+        :param xml_content: xml content returned by the PS server as string
+        :return (prestashop_error_code, prestashop_error_message)
         """
         error_answer = self._parse(xml_content)
         if isinstance(error_answer, dict):
@@ -131,12 +132,12 @@ class PrestaShopWebService(object):
         return (error_content.get('code'), error_content.get('message'))
 
     def _check_status_code(self, status_code, content):
-        """
-        Take the status code and throw an exception if the server didn't return
-        200 or 201 code
+        """Take the status code and check it.
 
-        @param status_code: status code returned by the server
-        @return: True or raise an exception PrestaShopWebServiceError
+        Throw an exception if the server didn't return 200 or 201 code.
+
+        :param status_code: status code returned by the server
+        :return: True or raise an exception PrestaShopWebServiceError
         """
         message_by_code = {204: 'No content',
                            400: 'Bad Request',
@@ -168,33 +169,34 @@ class PrestaShopWebService(object):
                 status_code,
                 ps_error_msg=ps_error_msg,
                 ps_error_code=ps_error_code,
-                )
+            )
 
     def _check_version(self, version):
-        """
-        Check if this library is compatible with the called PrestaShop WebService
+        """Check if lib version is compatible with called webservice.
 
-        @param version: version returned by the PrestaShop webservice
-        @return: True if the library is compatible. Otherwise raise an error PrestaShopWebServiceError
+        :param version: version returned by the PrestaShop webservice
+        :return: True if the library is compatible.
+            Otherwise raise an error PrestaShopWebServiceError
         """
         if version:
             if not (LooseVersion(self.MIN_COMPATIBLE_VERSION) <=
                     LooseVersion(version) <=
                     LooseVersion(self.MAX_COMPATIBLE_VERSION)):
-                warnings.warn(("This library may not be compatible with this version of PrestaShop (%s). "
-                     "Please upgrade/downgrade this library") % (version,))
+                warnings.warn((
+                    "This library may not be compatible "
+                    "with this version of PrestaShop (%s). "
+                    "Please upgrade/downgrade this library") % (version,))
         return True
 
     def _execute(self, url, method, data=None, add_headers=None):
-        """
-        Execute a request on the PrestaShop Webservice
+        """Execute a request on the PrestaShop Webservice.
 
-        @param url: full url to call
-        @param method: GET, POST, PUT, DELETE, HEAD
-        @param data: for PUT (edit) and POST (add) only,
+        :param url: full url to call
+        :param method: GET, POST, PUT, DELETE, HEAD
+        :param data: for PUT (edit) and POST (add) only,
                      the xml sent to PrestaShop
-        @param add_headers: additional headers merged on the instance's headers
-        @return: tuple with (status code, header, content) of the response
+        :param add_headers: additional headers merged onto instance's headers.
+        :return: tuple with (status code, header, content) of the response.
         """
         if add_headers is None:
             add_headers = {}
@@ -215,11 +217,10 @@ class PrestaShopWebService(object):
         return response
 
     def _parse(self, content):
-        """
-        Parse the response of the webservice
+        """Parse the response of the webservice.
 
-        @param content: response from the webservice
-        @return: an ElementTree of the content
+        :param content: response from the webservice
+        :return: an ElementTree of the content
         """
         if not content:
             raise PrestaShopWebServiceError('HTTP response is empty')
@@ -239,62 +240,76 @@ class PrestaShopWebService(object):
         return parsed_content
 
     def _validate_query_options(self, options):
-        """
-        Check options against supported options
-        (reference : http://doc.prestashop.com/display/PS14/Cheat-sheet+-+Concepts+outlined+in+this+tutorial)
-        @param options: dict of options to use for the request
-        @return: True if valid, else raise an error PrestaShopWebServiceError
+        r"""Check options against supported options.
+
+        :param options: dict of options to use for the request
+        :return: True if valid, else raise an error PrestaShopWebServiceError
+
+        Official ref:
+        http://doc.prestashop.com/display/PS14/ \
+            Cheat-sheet+-+Concepts+outlined+in+this+tutorial
         """
         if not isinstance(options, dict):
-            raise PrestaShopWebServiceError('Parameters must be a instance of dict')
-        supported = ('filter', 'display', 'sort', 'limit', 'schema', 'date', 'id_shop')
-        # filter[firstname] (as e.g.) is allowed, so check only the part before a [
-        unsupported = set([param.split('[')[0] for param in options]).difference(supported)
+            raise PrestaShopWebServiceError(
+                'Parameters must be a instance of dict'
+            )
+        supported = (
+            'filter', 'display', 'sort',
+            'limit', 'schema', 'date', 'id_shop'
+        )
+        # filter[firstname] (as e.g.) is allowed
+        # so check only the part before a [
+        unsupported = set([
+            param.split('[')[0]
+            for param in options
+        ]).difference(supported)
         if unsupported:
-            raise PrestaShopWebServiceError('Unsupported parameters: %s'
-            % (', '.join(tuple(unsupported)),))
+            raise PrestaShopWebServiceError(
+                'Unsupported parameters: %s' % (', '.join(tuple(unsupported)),)
+            )
         return True
 
     # _validate method is deprecated
     _validate = _validate_query_options
 
     def _options_to_querystring(self, options):
-        """
-        Translate the dict of options to a url form
-        As instance :
-        {'display': '[firstname,lastname]',
-         'filter[id]': '[1|5]'}
-        will returns :
-        'display=[firstname,lastname]&filter[id]=[1|5]'
+        """Translate the dict of options to a url form.
 
-        @param options: dict of options for the request
-        @return: string to use in the url
+        For instance :
+            {'display': '[firstname,lastname]',
+             'filter[id]': '[1|5]'}
+        will return :
+            'display=[firstname,lastname]&filter[id]=[1|5]'
+
+        :param options: dict of options for the request
+        :return: string to use in the url
         """
         if self.debug:
             options.update({'debug': True})
         return urllib.urlencode(options)
 
     def add(self, resource, content=None, files=None):
-        """
-        Add (POST) a resource. The content can be a dict of values to create.
+        """Add (POST) a resource. Content can be a dict of values to create.
 
-        @param resource: type of resource to create
-        @param content: Full XML as string or dict of new resource values.
-        If a dict is given, it will be converted to XML with the necessary root tag ie:
+        :param resource: type of resource to create
+        :param content: Full XML as string or dict of new resource values.
+            If a dict is given, it will be converted to XML
+            with the necessary root tag ie:
             <prestashop>[[dict converted to xml]]</prestashop>
-        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
-        @return: an ElementTree of the response from the web service
+        :param files: a sequence of (type, filename, value) elements
+            for data to be uploaded as files.
+        :return: an ElementTree of the response from the web service
         """
         return self.add_with_url(self._api_url + resource, content, files)
 
     def add_with_url(self, url, xml=None, files=None):
-        """
-        Add (POST) a resource
+        """Add (POST) a resource.
 
-        @param url: A full URL which for the resource type to create
-        @param xml: Full XML as string of new resource.
-        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
-        @return: an ElementTree of the response from the web service
+        :param url: A full URL which for the resource type to create
+        :param xml: Full XML as string of new resource.
+        :param files: a sequence of (type, filename, value)
+            elements for data to be uploaded as files.
+        :return: an ElementTree of the response from the web service
         """
         if files is not None:
             headers, data = self.encode_multipart_formdata(files)
@@ -309,28 +324,32 @@ class PrestaShopWebService(object):
         return self._parse(response.content)
 
     def search(self, resource, options=None):
-        """
-        Retrieve (GET) a resource and returns the xml with the ids.
-        Is not supposed to be called with an id or whatever in the resource line 'addresses/1'
+        """Retrieve (GET) a resource and return the xml with the ids.
+
+        Is not supposed to be called with an id
+        or whatever in the resource line 'addresses/1'
         But only with 'addresses' or 'products' etc...
-        This method is only a mapper to the get method without the resource_id, but semantically
+
+        This method is only a mapper to the get method
+        without the resource_id, but semantically
         it is more clear than "get without id" to search resources
 
-        @param resource: string of the resource to search like 'addresses', 'products'
-        @param options:  Optional dict of parameters to filter the search (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
-        @return: ElementTree of the xml message
+        :param resource: string of the resource
+            to search like 'addresses', 'products'
+        :param options: optional dict of parameters to filter the search
+            (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        :return: ElementTree of the xml message
         """
         return self.get(resource, options=options)
 
     def get(self, resource, resource_id=None, options=None):
-        """
-        Retrieve (GET) a resource
+        """Retrieve (GET) a resource.
 
-        @param resource: type of resource to retrieve
-        @param resource_id: optional resource id to retrieve
-        @param options: Optional dict of parameters (one or more of
+        :param resource: type of resource to retrieve
+        :param resource_id: optional resource id to retrieve
+        :param options: Optional dict of parameters (one or more of
                         'filter', 'display', 'sort', 'limit', 'schema')
-        @return: an ElementTree of the response
+        :return: an ElementTree of the response
         """
         full_url = self._api_url + resource
         if resource_id is not None:
@@ -341,22 +360,21 @@ class PrestaShopWebService(object):
         return self.get_with_url(full_url)
 
     def get_with_url(self, url):
-        """
-        Retrieve (GET) a resource from a full URL
+        """Retrieve (GET) a resource from a full URL.
 
-        @param url: An URL which explicitly sets the resource type and ID to retrieve
-        @return: an ElementTree of the resource
+        :param url: URL which explicitly set resource type and ID to retrieve
+        :return: an ElementTree of the resource
         """
         return self._parse(self._execute(url, 'GET').content)
 
     def head(self, resource, resource_id=None, options=None):
-        """
-        Head method (HEAD) a resource
+        """Head method (HEAD) a resource.
 
-        @param resource: type of resource to retrieve
-        @param resource_id: optional resource id to retrieve
-        @param options: Optional dict of parameters (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
-        @return: the header of the response as a dict
+        :param resource: type of resource to retrieve
+        :param resource_id: optional resource id to retrieve
+        :param options: optional dict of parameters
+            (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        :return: the header of the response as a dict
         """
         full_url = self._api_url + resource
         if resource_id is not None:
@@ -367,109 +385,110 @@ class PrestaShopWebService(object):
         return self.head_with_url(full_url)
 
     def head_with_url(self, url):
-        """
-        Head method (HEAD) a resource from a full URL
+        """Head method (HEAD) a resource from a full URL.
 
-        @param url: An URL which explicitly sets the resource type and ID to retrieve
-        @return: the header of the response as a dict
+        :param url: URL which explicitly set resource type and ID to retrieve
+        :return: the header of the response as a dict
         """
         return self._execute(url, 'HEAD').headers
 
     def edit(self, resource, content):
-        """
-        Edit (PUT) a resource.
+        """Edit (PUT) a resource.
 
-        @param resource: type of resource to edit
-        @param content: modified XML as string of the resource.
-        @return: an ElementTree of the Webservice's response
+        :param resource: type of resource to edit
+        :param content: modified XML as string of the resource.
+        :return: an ElementTree of the Webservice's response
         """
         full_url = "%s%s" % (self._api_url, resource)
         return self.edit_with_url(full_url, content)
 
     def edit_with_url(self, url, content):
-        """
-        Edit (PUT) a resource from a full URL
+        """Edit (PUT) a resource from a full URL.
 
-        @param url: an full url to edit a resource
-        @param content: modified XML as string of the resource.
-        @return: an ElementTree of the Webservice's response
+        :param url: an full url to edit a resource
+        :param content: modified XML as string of the resource.
+        :return: an ElementTree of the Webservice's response
         """
         headers = {'Content-Type': 'text/xml'}
         response = self._execute(url, 'PUT', data=content, add_headers=headers)
         return self._parse(response.content)
 
     def delete(self, resource, resource_ids):
-        """
-        Delete (DELETE) a resource.
+        """Delete (DELETE) a resource.
 
-        @param resource: type of resource to retrieve
-        @param resource_ids: int or list of ids to delete
-        @return: True if delete is done, raise an error PrestaShopWebServiceError if missed
+        :param resource: type of resource to retrieve
+        :param resource_ids: int or list of ids to delete
+        :return: True if delete is done,
+            raise an error PrestaShopWebServiceError if missed
         """
         full_url = self._api_url + resource
         if isinstance(resource_ids, (tuple, list)):
-            full_url += "/?id=[%s]" % \
-                        (','.join([str(resource_id) for resource_id in resource_ids]),)
+            full_url += "/?id=[%s]" % (','.join([str(resource_id)
+                                       for resource_id in resource_ids]),)
         else:
             full_url += "/%s" % str(resource_ids)
         return self.delete_with_url(full_url)
 
     def delete_with_url(self, url):
-        """
-        Delete (DELETE) a resource.
+        """Delete (DELETE) a resource.
 
-        @param url: full URL to delete a resource
-        @return: True if delete is done, raise an error PrestaShopWebServiceError if missed
+        :param url: full URL to delete a resource
+        :return: True if delete is done,
+            raise an error PrestaShopWebServiceError if missed
         """
         self._execute(url, 'DELETE')
         return True
 
     def encode_multipart_formdata(self, files):
-        """
-        Encode files to an http multipart/form-data.
+        """Encode files to an http multipart/form-data.
 
-        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
-        @return: headers and body.
+        :param files: a sequence of (type, filename, value)
+            elements for data to be uploaded as files.
+        :return: headers and body.
         """
         BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF     = '\r\n'
-        L        = []
+        CRLF = '\r\n'
+        L = []
         for (key, filename, value) in files:
             L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+            L.append(
+                'Content-Disposition: form-data; \
+                    name="%s"; filename="%s"' % (key, filename))
             L.append('Content-Type: %s' % self.get_content_type(filename))
             L.append('')
             L.append(value)
         L.append('--' + BOUNDARY + '--')
         L.append('')
         body = CRLF.join(L)
-        headers = {'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY}
+        headers = {
+            'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY
+        }
         return headers, body
 
     def get_content_type(self, filename):
-        """
-        Retrieve filename mimetype.
+        """Retrieve filename mimetype.
 
-        @param filename: file name.
-        @return: mimetype.
+        :param filename: file name.
+        :return: mimetype.
         """
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
-    """
-    Interacts with the PrestaShop WebService API, use dict for messages
-    """
+    """Interacts with the PrestaShop WebService API, use dict for messages."""
 
     def search(self, resource, options=None):
-        """
-        Retrieve (GET) a resource and returns a list of its ids.
-        Is not supposed to be called with an id or whatever in the resource line 'addresses/1'
+        """Retrieve (GET) a resource and return a list of its ids.
+
+        Is not supposed to be called with an id
+        or whatever in the resource line 'addresses/1'
         But only with 'addresses' or 'products' etc...
 
-        @param resource: string of the resource to search like 'addresses', 'products'
-        @param options:  Optional dict of parameters to filter the search (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
-        @return: list of ids as int
+        :param resource: string of the resource to search like,
+            ie: 'addresses', 'products', 'manufacturers', etc.
+        :param options: optional dict of parameters to filter the search
+            (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
+        :return: list of ids as int
         """
         def dive(response, level=1):
             # not deterministic but we know that we only have one key
@@ -479,7 +498,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             if not response:
                 return False
             if level > 0:
-                return dive(response[response.keys()[0]], level=level-1)
+                return dive(response[response.keys()[0]], level=level - 1)
             return response
 
         # returned response looks like :
@@ -491,8 +510,8 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         # {'addresses': {'address': {'attrs': {'id': '1'}, 'value': ''}}}
         # for zero resource :
         # {'addresses': ''}
-        response = super(PrestaShopWebServiceDict, self).\
-                    search(resource, options=options)
+        response = super(
+            PrestaShopWebServiceDict, self).search(resource, options=options)
 
         elems = dive(response, level=2)
         # when there is only 1 resource, we do not have a list in the response
@@ -505,11 +524,11 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         return ids
 
     def get_with_url(self, url):
-        """
-        Retrieve (GET) a resource from a full URL
+        """Retrieve (GET) a resource from a full URL.
 
-        @param url: An URL which explicitly sets the resource type and ID to retrieve
-        @return: a dict of the response. Remove root keys ['prestashop'] from the message
+        :param url: URL which explicitly set resource type and ID to retrieve
+        :return: a dict of the response.
+            Remove root keys ['prestashop'] from the message
         """
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
         if isinstance(response, dict):
@@ -518,33 +537,33 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             return response
 
     def partial_add(self, resource, fields):
-        """
-        Add (POST) a resource without necessary all the content.
+        """Add (POST) a resource without necessary all the content.
+
         Retrieve the full empty envelope
         and merge the given fields in this envelope.
 
-        @param resource: type of resource to create
-        @param fields: dict of fields of the resource to create
-        @return: response of the server
+        :param resource: type of resource to create
+        :param fields: dict of fields of the resource to create
+        :return: response of the server
         """
         blank_envelope = self.get(resource, options={'schema': 'blank'})
         complete_content = dict(blank_envelope, **fields)
         return self.add(resource, complete_content)
 
     def partial_edit(self, resource, resource_id, fields):
-        """
-        Edit (PUT) partially a resource.
+        """Edit (PUT) partially a resource.
+
         Standard REST PUT means a full replacement of the resource.
         Allows to edit only only some fields of the resource with
         a perf penalty. It will read on prestashop,
         then modify the keys in content,
         and write on prestashop.
 
-        @param resource: type of resource to edit
-        @param resource_id: id of the resource to edit
-        @param fields: dict containing the field name as key
+        :param resource: type of resource to edit
+        :param resource_id: id of the resource to edit
+        :param fields: dict containing the field name as key
             and the values of the files to modify
-        @return: an ElementTree of the Webservice's response
+        :return: an ElementTree of the Webservice's response
         """
         complete_content = self.get(resource, resource_id)
         for key in complete_content:
@@ -553,39 +572,39 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         return self.edit(resource, complete_content)
 
     def add_with_url(self, url, content=None, files=None):
-        """
-        Add (POST) a resource
+        """Add (POST) a resource.
 
-        @param url: A full URL which for the resource type to create
-        @param content: dict of new resource values. it will be converted to XML with the necessary root tag ie:
+        :param url: A full URL which for the resource type to create
+        :param content: dict of new resource values.
+            It will be converted to XML with the necessary root tag ie:
             <prestashop>[[dict converted to xml]]</prestashop>
-        @param files: a sequence of (type, filename, value) elements for data to be uploaded as files.
-        @return: a dict of the response from the web service
+        :param files: a sequence of (type, filename, value) elements
+            for data to be uploaded as files.
+        :return: a dict of the response from the web service
         """
         if content is not None and isinstance(content, dict):
             xml_content = dict2xml.dict2xml({'prestashop': content})
         else:
             xml_content = content
-        return super(PrestaShopWebServiceDict, self).add_with_url(url, xml_content, files)
+        _super = super(PrestaShopWebServiceDict, self)
+        return _super.add_with_url(url, xml_content, files)
 
     def edit_with_url(self, url, content):
-        """
-        Edit (PUT) a resource from a full URL
+        """Edit (PUT) a resource from a full URL.
 
-        @param url: an full url to edit a resource
-        @param content: modified dict of the resource.
-        @return: an ElementTree of the Webservice's response
+        :param url: an full url to edit a resource
+        :param content: modified dict of the resource.
+        :return: an ElementTree of the Webservice's response
         """
         xml_content = dict2xml.dict2xml({'prestashop': content})
         _super = super(PrestaShopWebServiceDict, self)
         return _super.edit_with_url(url, xml_content)
 
     def _parse(self, content):
-        """
-        Parse the response of the webservice, assumed to be a XML in utf-8
+        """Parse the response of the webservice, assumed to be a XML in utf-8.
 
-        @param content: response from the webservice
-        @return: a dict of the content
+        :param content: response from the webservice
+        :return: a dict of the content
         """
         parsed_content = super(PrestaShopWebServiceDict, self)._parse(content)
         return xml2dict.ET2dict(parsed_content)
