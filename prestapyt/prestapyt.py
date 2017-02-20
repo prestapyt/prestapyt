@@ -128,7 +128,14 @@ class PrestaShopWebService(object):
                              )
             if isinstance(error_content, list):
                 error_content = error_content[0]
-        return (error_content.get('code'), error_content.get('message'))
+            code = error_content.get('code')
+            message = error_content.get('message')
+        elif isinstance(error_answer, type(ElementTree.Element(None))):
+            # http://stackoverflow.com/questions/9225913
+            error = error_answer.find('errors/error')
+            code = error.find('code').text
+            message = error.find('message').text
+        return (code, message)
 
     def _check_status_code(self, status_code, content):
         """
