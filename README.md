@@ -1,5 +1,4 @@
-Prestapyt
-=========
+# Prestapyt
 
 prestapyt is a library for Python to interact with the PrestaShop's Web Service API.
 
@@ -14,8 +13,7 @@ and then returns the XML ready for you to work with in Python
 (as well as prestasac if you work with scala).
 
 
-Installation
-============
+## Installation
 
 The easiest way to install prestapyt (needs setuptools):
 
@@ -31,68 +29,101 @@ If you do not have setuptools, download prestapyt as a .tar.gz or .zip from
     python setup.py install
 
 
-Usage
-=====
+## Usage
 
-    from prestapyt import PrestaShopWebServiceError, PrestaShopWebService
 
-    prestashop = PrestaShopWebService('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')  # messages will be as xml
-    # or
-    prestashop = PrestaShopWebServiceDict('http://localhost:8080/api', 'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')  # messages will be as dict
+### Message as xml
+```python
+from prestapyt import PrestaShopWebService
+prestashop = PrestaShopWebService('http://localhost:8080/api', WEBSERVICE_KEY)
+```
 
-    # search / get all addresses
-    prestashop.get('addresses') # will return the same xml message than
-    prestashop.search('addresses')
-    # but when using PrestaShopWebServiceDict
-    prestashop.search('addresses') will return a list of ids
+### Message as dictionary
+```python
+from prestapyt import PrestaShopWebServiceDict
+prestashop = PrestaShopWebServiceDict('http://localhost:8080/api', WEBSERVICE_KEY)
+```
 
-    # search with filters
-    prestashop.search('addresses', options={'limit': 10})
-    prestashop.search('addresses', options={'display': '[firstname,lastname]', 'filter[id]': '[1|5]'})
-    # reference for the options : http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial
+### Search
 
-    # get address 1
-    prestashop.get('addresses', resource_id=1) # returns ElementTree (PrestaShopWebService) or dict (PrestaShopWebServiceDict)
-    prestashop.get('addresses/1')
+#### Get all addresses
+```python
+prestashop.get('addresses') # will return the same xml message than
+prestashop.search('addresses')
+```
+Note: when using PrestaShopWebServiceDict ``prestashop.search('addresses')`` will return a list of ids.
 
-    # full url
-    prestashop.get('http://localhost:8080/api/addresses/1')
 
-    # head
-    print prestashop.head('addresses')
+#### Search with filters
+```python
+prestashop.search('addresses', options={'limit': 10})
+prestashop.search('addresses', options={'display': '[firstname,lastname]', 'filter[id]': '[1|5]'})
+```
+For additional info [check reference for the options](http://doc.prestashop.com/display/PS14/Cheat+Sheet_+Concepts+Outlined+in+this+Tutorial).
 
-    # delete a resource
-    prestashop.delete('addresses', resource_ids=4)
+#### Get single address
+```python
+prestashop.get('addresses', resource_id=1) or prestashop.get('addresses/1')
+```
+returns ElementTree (PrestaShopWebService) or dict (PrestaShopWebServiceDict).
 
-    # delete many resources
-    prestashop.delete('addresses', resource_ids=[5,6])
+You can use the full api URL
 
-    # add
-    prestashop.add('addresses', xml)
+```python
+prestashop.get('http://localhost:8080/api/addresses/1')
+```
 
-    # edit
-    prestashop.edit('addresses', 5, xml)
+#### Head request
 
-    # get a blank xml
-    prestashop.get('addresses', options={'schema': 'blank'})
+```python
+prestashop.head('addresses')
+```
 
-    # add product image
-    file_name = 'sample.jpg'
-    fd        = io.open(file_name, "rb")
-    content   = fd.read()
-    fd.close()
+### Manipulate records
 
-    prestashop.add('/images/products/123', files=[('image', file_name, content)])
+#### Delete
+```python
+prestashop.delete('addresses', resource_ids=4)
+```
 
-API Documentation
-=================
+#### Delete many records at once
+```python
+prestashop.delete('addresses', resource_ids=[5,6])
+```
+
+#### Add record
+```python
+prestashop.add('addresses', xml)
+```
+
+#### Edit record
+```python
+prestashop.edit('addresses', xml)
+```
+
+#### Get model blank xml schema
+```python
+prestashop.get('addresses', options={'schema': 'blank'})
+```
+
+#### Add product image
+
+```python
+file_name = 'sample.jpg'
+fd = io.open(file_name, "rb")
+content = fd.read()
+fd.close()
+
+prestashop.add('/images/products/123', files=[('image', file_name, content)])
+```
+
+## API Documentation
 
 Documentation for the PrestaShop Web Service can be found on the
 PrestaShop wiki: [Using the REST webservice]
 
 
-Credits:
-========
+## Credits:
 
 Thanks to Prestashop SA for their PHP API Client PSWebServiceLibrary.php
 
@@ -100,8 +131,7 @@ Thanks to Alex Dean for his port of PSWebServiceLibrary.php
 to the Scala language, [prestasac] from which I also inspired my library.
 
 
-Copyright and License
-=====================
+## Copyright and License
 
 prestapyt is copyright (c) 2012 Guewen Baconnier
 
@@ -124,4 +154,3 @@ License along with prestapyt. If not, see [GNU licenses](http://www.gnu.org/lice
 [Using the REST webservice]: http://doc.prestashop.com/display/PS14/Using+the+REST+webservice
 [Prestapyt Source Archives]: https://github.com/guewen/prestapyt/downloads
 [prestasac]: https://github.com/orderly/prestashop-scala-client
-
