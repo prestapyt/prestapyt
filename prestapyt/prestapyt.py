@@ -34,6 +34,16 @@ try:
 except ImportError, e:
     from xml.etree import ElementTree
 
+# http://docs.python-requests.org/en/master/api/#api-changes
+# Enabling debugging at http.client level (requests->urllib3->http.client)
+# you will see the REQUEST, including HEADERS and DATA, and RESPONSE with
+# HEADERS but without DATA.
+# the only thing missing will be the response.body which is not logged.
+try:  # for Python 3
+    from http.client import HTTPConnection
+except ImportError:
+    from httplib import HTTPConnection
+
 from .version import __author__, __version__  # noqa
 
 
@@ -67,7 +77,8 @@ class PrestaShopWebService(object):
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
     MAX_COMPATIBLE_VERSION = '1.5.9.0'
 
-    def __init__(self, api_url, api_key, debug=False, session=None):
+    def __init__(self, api_url, api_key, debug=False, session=None,
+                 verbose=False):
         """
         Create an instance of PrestashopWebService.
 
@@ -82,14 +93,21 @@ class PrestaShopWebService(object):
         except PrestaShopWebServiceError as err:
             ...
 
-        Verbose logging of the requests/responses can be activated
-        using configuring logging, see on the requests doc:
-        http://docs.python-requests.org/en/master/api/#api-changes
+        When verbose mode is activated, you might need to activate the
+        debug logging for the logger "requests.packages.urllib3"::
+
+          logger = logging.getLogger("requests.packages.urllib3")
+          logger.setLevel(logging.DEBUG)
+
+        The verbose logging will show the requests, including headers and data,
+        and the responses with headers but no data.
 
         :param api_url: Root URL for the shop
         :param api_key: Authentification key
         :param debug: activate PrestaShop's webservice debug mode
         :param session: pass a custom requests Session
+        :param verbose: activate logging of the requests/responses (but no
+        responses body)
         """
         # required to hit prestashop
         self._api_url = api_url
@@ -105,6 +123,7 @@ class PrestaShopWebService(object):
 
         # optional arguments
         self.debug = debug
+        self.verbose = verbose
 
         if session is None:
             self.client = requests.Session()
@@ -211,12 +230,19 @@ class PrestaShopWebService(object):
         request_headers = self.client.headers.copy()
         request_headers.update(add_headers)
 
-        response = self.client.request(
-            method,
-            url,
-            data=data,
-            headers=request_headers,
-        )
+        if self.verbose:
+            currentlevel = HTTPConnection.debuglevel
+            HTTPConnection.debuglevel = 1
+        try:
+            response = self.client.request(
+                method,
+                url,
+                data=data,
+                headers=request_headers,
+            )
+        finally:
+            if self.verbose:
+                HTTPConnection.debuglevel = currentlevel
 
         self._check_status_code(response.status_code, response.content)
         self._check_version(response.headers.get('psws-version'))
