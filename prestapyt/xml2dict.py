@@ -14,14 +14,14 @@ import re
 
 try:
     import xml.etree.cElementTree as ET
-except ImportError, err:
+except ImportError as err:
     import xml.etree.ElementTree as ET
 
 
 def _parse_node(node):
     tree = {}
     attrs = {}
-    for attr_tag, attr_value in node.attrib.items():
+    for attr_tag, attr_value in list(node.attrib.items()):
         #  skip href attributes, not supported when converting to dict
         if attr_tag == '{http://www.w3.org/1999/xlink}href':
             continue
@@ -59,7 +59,7 @@ def _parse_node(node):
         tree['value'] = value
 
     # if there is only a value; no attribute, no child, we return directly the value
-    if tree.keys() == ['value']:
+    if list(tree.keys()) == ['value']:
         tree = tree['value']
     return tree
 
@@ -133,8 +133,8 @@ if __name__ == '__main__':
 
     pprint(xml2dict(s))
 
-    import dict2xml
-    from prestapyt import PrestaShopWebService
+    from . import dict2xml
+    from .prestapyt import PrestaShopWebService
     prestashop = PrestaShopWebService('http://localhost:8080/api',
                                       'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
 

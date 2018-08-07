@@ -20,18 +20,21 @@ from which I also inspired my library.
 Questions, comments? guewen.baconnier@gmail.com
 """
 
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 import warnings
 import requests
 import mimetypes
-import xml2dict
-import dict2xml
+
+from . import xml2dict
+from . import dict2xml
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
 try:
     from xml.etree import cElementTree as ElementTree
-except ImportError, e:
+except ImportError as e:
     from xml.etree import ElementTree
 
 # http://docs.python-requests.org/en/master/api/#api-changes
@@ -42,7 +45,7 @@ except ImportError, e:
 try:  # for Python 3
     from http.client import HTTPConnection
 except ImportError:
-    from httplib import HTTPConnection
+    from http.client import HTTPConnection
 
 from .version import __author__, __version__  # noqa
 
@@ -260,7 +263,7 @@ class PrestaShopWebService(object):
 
         try:
             parsed_content = ElementTree.fromstring(content)
-        except ExpatError, err:
+        except ExpatError as err:
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s' % (err,)
             )
@@ -319,7 +322,7 @@ class PrestaShopWebService(object):
         """
         if self.debug:
             options.update({'debug': True})
-        return urllib.urlencode(options)
+        return urllib.parse.urlencode(options)
 
     def add(self, resource, content=None, files=None):
         """Add (POST) a resource. Content can be a dict of values to create.
@@ -531,7 +534,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             if not response:
                 return False
             if level > 0:
-                return dive(response[response.keys()[0]], level=level - 1)
+                return dive(response[list(response.keys())[0]], level=level - 1)
             return response
 
         # returned response looks like :
