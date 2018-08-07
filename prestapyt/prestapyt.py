@@ -47,7 +47,8 @@ try:  # for Python 3
 except ImportError:
     from http.client import HTTPConnection
 
-from .version import __author__, __version__  # noqa
+from .version import __author__
+from .version import __version__
 
 
 class PrestaShopWebServiceError(Exception):
