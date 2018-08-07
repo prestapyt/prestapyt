@@ -2,8 +2,8 @@ from prestapyt import PrestaShopWebService
 from xml.etree import ElementTree
 
 
-prestashop = PrestaShopWebService('http://localhost/api',
-                                  'HRT7FAHK3HPQDXEYG5DF1BDXDUJ61MIR',
+prestashop = PrestaShopWebService('http://localhost:8080/api',
+                                  'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',
                                   parse_type='dict')
 #prestashop.debug = True
 from pprint import pprint
