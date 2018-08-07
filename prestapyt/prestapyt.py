@@ -27,8 +27,8 @@ import warnings
 import requests
 import mimetypes
 
-import xml2dict
-import dict2xml
+from . import xml2dict
+from . import dict2xml
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
@@ -47,9 +47,7 @@ try:  # for Python 3
 except ImportError:
     from http.client import HTTPConnection
 
-import version
-__author__ = version.__author__
-__version__ = version.__version__
+from .version import __author__, __version__  # noqa
 
 
 class PrestaShopWebServiceError(Exception):
@@ -83,7 +81,7 @@ class PrestaShopWebService(object):
     MAX_COMPATIBLE_VERSION = '1.5.9.0'
 
     def __init__(self, api_url, api_key, debug=False, session=None,
-                 verbose=False, parse_type='dict'):
+                 verbose=False):
         """
         Create an instance of PrestashopWebService.
 
@@ -649,8 +647,8 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
 
 
 if __name__ == '__main__':
-    prestashop = PrestaShopWebServiceDict('http://localhost:80/api',
-                                          'HRT7FAHK3HPQDXEYG5DF1BDXDUJ61MIR')
+    prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
+                                          'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
 
     from pprint import pprint
 
@@ -672,9 +670,9 @@ if __name__ == '__main__':
     pprint(prestashop.get('products', 1))
 
     address_data = prestashop.get('addresses', 1)
-    address_data['address']['firstname'] = 'Alfred'
-    address_data['address']['lastname'] = 'Amaris'
-    prestashop.edit('addresses', address_data)
+    address_data['address']['firstname'] = 'Robert'
+    prestashop.edit('addresses', 1, address_data)
+
     address_data = prestashop.get('addresses', options={'schema': 'blank'})
     address_data['address'].update({'address1': '1 Infinite Loop',
                                     'address2': '',
@@ -685,7 +683,7 @@ if __name__ == '__main__':
                                     'dni': '',
                                     'firstname': 'STEVE',
                                     'id_country': '21',
-                                    'id_customer': '1',
+                                    'id_customer': '',
                                     'id_manufacturer': '1',
                                     'id_state': '5',
                                     'id_supplier': '',
