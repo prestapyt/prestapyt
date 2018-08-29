@@ -11,6 +11,8 @@
 """
 
 from xml.dom.minidom import getDOMImplementation
+from past.builtins import basestring
+
 
 def _process(doc, tag, tag_value):
     """
@@ -29,7 +31,7 @@ def _process(doc, tag, tag_value):
 
     # Create a new node for simple values
     if (isinstance(tag_value, (float, int)) or
-            isinstance(tag_value, str)):
+            isinstance(tag_value, basestring)):
         return _process_simple(doc, tag, tag_value)
 
     # Return a list of nodes with same tag
