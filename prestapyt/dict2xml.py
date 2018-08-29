@@ -10,8 +10,10 @@
   Copyright 2012 Camptocamp SA
 """
 
+from __future__ import unicode_literals
 from xml.dom.minidom import getDOMImplementation
 from past.builtins import basestring
+from builtins import str
 
 
 def _process(doc, tag, tag_value):

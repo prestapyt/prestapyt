@@ -21,7 +21,7 @@ except ImportError as err:
 def _parse_node(node):
     tree = {}
     attrs = {}
-    for attr_tag, attr_value in list(node.attrib.items()):
+    for attr_tag, attr_value in node.attrib.items():
         #  skip href attributes, not supported when converting to dict
         if attr_tag == '{http://www.w3.org/1999/xlink}href':
             continue

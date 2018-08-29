@@ -20,9 +20,11 @@ from which I also inspired my library.
 Questions, comments? guewen.baconnier@gmail.com
 """
 
-import urllib.request
-import urllib.parse
-import urllib.error
+from future.standard_library import install_aliases
+install_aliases()
+
+from urllib.parse import urlencode
+
 import warnings
 import requests
 import mimetypes
@@ -45,7 +47,7 @@ except ImportError as e:
 try:  # for Python 3
     from http.client import HTTPConnection
 except ImportError:
-    from http.client import HTTPConnection
+    from httplib import HTTPConnection
 
 from .version import __author__
 from .version import __version__
@@ -323,7 +325,7 @@ class PrestaShopWebService(object):
         """
         if self.debug:
             options.update({'debug': True})
-        return urllib.parse.urlencode(options)
+        return urlencode(options)
 
     def add(self, resource, content=None, files=None):
         """Add (POST) a resource. Content can be a dict of values to create.
