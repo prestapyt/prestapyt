@@ -1,20 +1,19 @@
-from prestapyt import PrestaShopWebService
+from prestapyt import PrestaShopWebServiceDict
 from xml.etree import ElementTree
+from future import print_function
 
 
 prestashop = PrestaShopWebService('http://localhost:8080/api',
                                   'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',
                                   parse_type='dict')
-#prestashop.debug = True
-from pprint import pprint
-pprint(prestashop.get(''))
-pprint(prestashop.head(''))
-pprint(prestashop.get('addresses', 1))
-pprint(prestashop.get('products', 1))
+print(prestashop.get(''))
+print(prestashop.head(''))
+print(prestashop.get('addresses', 1))
+print(prestashop.get('products', 1))
 
 address_data = prestashop.get('addresses', 1)
 address_data['address']['firstname'] = 'Robert'
-prestashop.edit('addresses', 1, address_data)
+prestashop.edit('addresses', address_data)
 
 address_data = prestashop.get('addresses', options={'schema': 'blank'})
 address_data['address'].update({'address1': '1 Infinite Loop',
