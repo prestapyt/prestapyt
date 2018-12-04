@@ -1,6 +1,6 @@
+from future import print_function
 from prestapyt import PrestaShopWebService
 from xml.etree import ElementTree
-from future import print_function
 
 
 prestashop = PrestaShopWebService('http://localhost:8080/api',

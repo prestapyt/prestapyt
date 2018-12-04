@@ -1,11 +1,10 @@
+from __future__ import print_function
 from prestapyt import PrestaShopWebServiceDict
 from xml.etree import ElementTree
-from future import print_function
 
 
-prestashop = PrestaShopWebService('http://localhost:8080/api',
-                                  'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',
-                                  parse_type='dict')
+prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
+                                  'BVWPFFYBT97WKM959D7AVVD0M4815Y1L',)
 print(prestashop.get(''))
 print(prestashop.head(''))
 print(prestashop.get('addresses', 1))
