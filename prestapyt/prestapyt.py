@@ -294,7 +294,7 @@ class PrestaShopWebService(object):
             )
         supported = (
             'filter', 'display', 'sort',
-            'limit', 'schema', 'date', 'id_shop'
+            'limit', 'schema', 'date', 'id_shop', 'id_group_shop',
         )
         # filter[firstname] (as e.g.) is allowed
         # so check only the part before a [
@@ -327,7 +327,7 @@ class PrestaShopWebService(object):
             options.update({'debug': True})
         return urlencode(options)
 
-    def add(self, resource, content=None, files=None):
+    def add(self, resource, content=None, files=None, options=None):
         """Add (POST) a resource. Content can be a dict of values to create.
 
         :param resource: type of resource to create
@@ -339,7 +339,11 @@ class PrestaShopWebService(object):
             for data to be uploaded as files.
         :return: an ElementTree of the response from the web service
         """
-        return self.add_with_url(self._api_url + resource, content, files)
+        full_url = self._api_url + resource
+        if options is not None:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
+        return self.add_with_url(full_url, content, files)
 
     def add_with_url(self, url, xml=None, files=None):
         """Add (POST) a resource.
@@ -431,7 +435,7 @@ class PrestaShopWebService(object):
         """
         return self._execute(url, 'HEAD').headers
 
-    def edit(self, resource, content):
+    def edit(self, resource, content, options=None):
         """Edit (PUT) a resource.
 
         :param resource: type of resource to edit
@@ -439,6 +443,9 @@ class PrestaShopWebService(object):
         :return: an ElementTree of the Webservice's response
         """
         full_url = "%s%s" % (self._api_url, resource)
+        if options:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
         return self.edit_with_url(full_url, content)
 
     def edit_with_url(self, url, content):
