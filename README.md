@@ -12,8 +12,6 @@ supports the Web Service's HTTP-based CRUD operations (handling any errors)
 and then returns the XML ready for you to work with in Python
 (as well as prestasac if you work with scala).
 
-**It works only with python 2, python 3 is not supported.**
-
 ## Installation
 
 The easiest way to install prestapyt (needs setuptools):

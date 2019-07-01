@@ -20,18 +20,23 @@ from which I also inspired my library.
 Questions, comments? guewen.baconnier@gmail.com
 """
 
-import urllib
+from future.standard_library import install_aliases
+install_aliases()
+
+from urllib.parse import urlencode
+
 import warnings
 import requests
 import mimetypes
-import xml2dict
-import dict2xml
+
+from . import xml2dict
+from . import dict2xml
 
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
 try:
     from xml.etree import cElementTree as ElementTree
-except ImportError, e:
+except ImportError as e:
     from xml.etree import ElementTree
 
 # http://docs.python-requests.org/en/master/api/#api-changes
@@ -44,7 +49,8 @@ try:  # for Python 3
 except ImportError:
     from httplib import HTTPConnection
 
-from .version import __author__, __version__  # noqa
+from .version import __author__
+from .version import __version__
 
 
 class PrestaShopWebServiceError(Exception):
@@ -260,7 +266,7 @@ class PrestaShopWebService(object):
 
         try:
             parsed_content = ElementTree.fromstring(content)
-        except ExpatError, err:
+        except ExpatError as err:
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s' % (err,)
             )
@@ -319,7 +325,7 @@ class PrestaShopWebService(object):
         """
         if self.debug:
             options.update({'debug': True})
-        return urllib.urlencode(options)
+        return urlencode(options)
 
     def add(self, resource, content=None, files=None):
         """Add (POST) a resource. Content can be a dict of values to create.
@@ -531,7 +537,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             if not response:
                 return False
             if level > 0:
-                return dive(response[response.keys()[0]], level=level - 1)
+                return dive(response[list(response.keys())[0]], level=level - 1)
             return response
 
         # returned response looks like :

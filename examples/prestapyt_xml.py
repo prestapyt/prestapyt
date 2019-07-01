@@ -1,3 +1,4 @@
+from future import print_function
 from prestapyt import PrestaShopWebService
 from xml.etree import ElementTree
 
@@ -8,17 +9,17 @@ prestashop.debug = True
 
 prestashop.get('')
 
-print "GET"
-print ElementTree.tostring(prestashop.get('addresses'))
-print ElementTree.tostring(prestashop.get('addresses', resource_id=1))
-print ElementTree.tostring(prestashop.get('addresses/1'))
-print ElementTree.tostring(prestashop.get('addresses', options={'limit': 1}))
-print ElementTree.tostring(prestashop.get('stock_movement_reasons'))
+print("GET")
+print((ElementTree.tostring(prestashop.get('addresses'))))
+print((ElementTree.tostring(prestashop.get('addresses', resource_id=1))))
+print((ElementTree.tostring(prestashop.get('addresses/1'))))
+print((ElementTree.tostring(prestashop.get('addresses', options={'limit': 1}))))
+print((ElementTree.tostring(prestashop.get('stock_movement_reasons'))))
 
-print "HEAD"
-print prestashop.head('addresses')
+print("HEAD")
+print((prestashop.head('addresses')))
 
-print "EDIT"
+print("EDIT")
 prestashop.edit("addresses", 1, """<prestashop xmlns:ns0="http://www.w3.org/1999/xlink">
 <address>
 	<id>1</id>
@@ -46,7 +47,7 @@ prestashop.edit("addresses", 1, """<prestashop xmlns:ns0="http://www.w3.org/1999
 </address>
 </prestashop>""")
 
-print "ADD"
+print("ADD")
 address = """
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
 <address>
