@@ -27,6 +27,9 @@ If you do not have setuptools, download prestapyt as a .tar.gz or .zip from
 
     python setup.py install
 
+In order to always be uptodate, the best way is to use pip from this repo with the following command :
+
+    pip install --ignore-installed git+https://github.com/prestapyt/prestapyt.git@master
 
 ## Usage
 
