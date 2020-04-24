@@ -28,7 +28,7 @@ setup(
     include_package_data = True,
 
     # Package dependencies.
-    install_requires = ['requests','future'],
+    install_requires = ['requests','future', 'dicttoxml'],
 
     # Metadata for PyPI.
     author = 'Guewen Baconnier',

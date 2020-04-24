@@ -32,6 +32,9 @@ import mimetypes
 from . import xml2dict
 from . import dict2xml
 
+import json
+import dicttoxml
+
 from xml.parsers.expat import ExpatError
 from distutils.version import LooseVersion
 try:
@@ -81,10 +84,10 @@ class PrestaShopWebService(object):
     """Interact with the PrestaShop WebService API, use XML for messages."""
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.9.0'
+    MAX_COMPATIBLE_VERSION = '1.7.6.4'
 
     def __init__(self, api_url, api_key, debug=False, session=None,
-                 verbose=False):
+                 verbose=False, json=False):
         """
         Create an instance of PrestashopWebService.
 
@@ -138,6 +141,9 @@ class PrestaShopWebService(object):
 
         if not self.client.auth:
             self.client.auth = (api_key, '')
+
+        if json:
+            self._json_format = True
 
     def _parse_error(self, xml_content):
         """Take the XML content as string and extract the PrestaShop error.
@@ -233,6 +239,9 @@ class PrestaShopWebService(object):
         if add_headers is None:
             add_headers = {}
 
+        if self._json_format:
+            add_headers['Io-Format'] = 'JSON'
+
         request_headers = self.client.headers.copy()
         request_headers.update(add_headers)
 
@@ -264,8 +273,12 @@ class PrestaShopWebService(object):
         if not content:
             raise PrestaShopWebServiceError('HTTP response is empty')
 
+        parsed_content = None
         try:
-            parsed_content = ElementTree.fromstring(content)
+            if self._json_format:
+                parsed_content = json.loads(content.decode('utf-8')) 
+            else:
+                parsed_content = ElementTree.fromstring(content)
         except ExpatError as err:
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s' % (err,)
@@ -358,13 +371,19 @@ class PrestaShopWebService(object):
             headers, data = self.encode_multipart_formdata(files)
             response = self._execute(url, 'POST', data=data,
                                      add_headers=headers)
+        elif isinstance(xml,dict):
+            headers = {'Content-Type': 'application/json'}
+            return self._execute(url, 'POST',
+                                    data=dicttoxml.dicttoxml(xml),
+                                    add_headers=headers)
         elif xml is not None:
             headers = {'Content-Type': 'text/xml'}
             response = self._execute(url, 'POST', data=xml,
                                      add_headers=headers)
+            return self._parse(response.content)
         else:
             raise PrestaShopWebServiceError('Undefined data.')
-        return self._parse(response.content)
+
 
     def search(self, resource, options=None):
         """Retrieve (GET) a resource and return the xml with the ids.
@@ -408,6 +427,8 @@ class PrestaShopWebService(object):
         :param url: URL which explicitly set resource type and ID to retrieve
         :return: an ElementTree of the resource
         """
+        if self._json_format:
+            return json.loads(self._execute(url, 'GET').content.decode('utf-8'))
         return self._parse(self._execute(url, 'GET').content)
 
     def head(self, resource, resource_id=None, options=None):
