@@ -81,7 +81,7 @@ class PrestaShopWebService(object):
     """Interact with the PrestaShop WebService API, use XML for messages."""
 
     MIN_COMPATIBLE_VERSION = '1.4.0.17'
-    MAX_COMPATIBLE_VERSION = '1.5.9.0'
+    MAX_COMPATIBLE_VERSION = '1.7.5.2'
 
     def __init__(self, api_url, api_key, debug=False, session=None,
                  verbose=False):
