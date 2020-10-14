@@ -293,7 +293,7 @@ class PrestaShopWebService(object):
                 'Parameters must be a instance of dict'
             )
         supported = (
-            'filter', 'display', 'sort',
+            'filter', 'display', 'sort','ws_key',
             'limit', 'schema', 'date', 'id_shop', 'id_group_shop',
         )
         # filter[firstname] (as e.g.) is allowed
