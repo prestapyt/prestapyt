@@ -547,7 +547,7 @@ class PrestaShopWebService(object):
 
         illegal_ranges = [fr'{chr(low)}-{chr(high)}' for (low, high) in illegal_unichrs]
         xml_illegal_character_regex = '[' + ''.join(illegal_ranges) + ']'
-        return re.compile(bytes(xml_illegal_character_regex))
+        return re.compile(bytes(xml_illegal_character_regex, encoding='utf-8'))
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
     """Interacts with the PrestaShop WebService API, use dict for messages."""
