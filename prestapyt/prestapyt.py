@@ -546,7 +546,7 @@ class PrestaShopWebService(object):
                                     (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF)])
 
         illegal_ranges = [fr'{chr(low)}-{chr(high)}' for (low, high) in illegal_unichrs]
-        xml_illegal_character_regex = '[' + ''.join(illegal_ranges) + ']', encoding='utf8'
+        xml_illegal_character_regex = '[' + ''.join(illegal_ranges) + ']'
         return re.compile(bytes(xml_illegal_character_regex))
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
