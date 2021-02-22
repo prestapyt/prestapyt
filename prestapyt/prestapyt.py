@@ -532,9 +532,16 @@ class PrestaShopWebService(object):
 
         :return: compiled regex
         """
-        illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F),
-                           (0x7F, 0x84), (0x86, 0x9F),
-                           (0xFDD0, 0xFDDF), (0xFFFE, 0xFFFF)]
+        illegal_unichrs = [
+             (0x00, 0x08),
+             (0x0B, 0x0C),
+            # (0x0E, 0x1F),
+            # (0x7F, 0x84),
+            # (0x86, 0x9F),
+            # (0xFDD0, 0xFDDF),
+            # (0xFFFE, 0xFFFF),
+        ]
+        """
         if sys.maxunicode >= 0x10000:  # not narrow build
             illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
                                     (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
@@ -544,6 +551,7 @@ class PrestaShopWebService(object):
                                     (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
                                     (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF),
                                     (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF)])
+        """
 
         illegal_ranges = [fr'{chr(low)}-{chr(high)}' for (low, high) in illegal_unichrs]
         xml_illegal_character_regex = '[' + ''.join(illegal_ranges) + ']'
