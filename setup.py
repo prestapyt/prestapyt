@@ -39,6 +39,7 @@ setup(
     packages=['prestapyt'],
     keywords = 'prestashop api client rest',
     description = 'A library to access Prestashop Web Service from Python.',
+    long_description_content_type='text/markdown',
     long_description = read('README.md'),
     classifiers = [
         'Development Status :: 4 - Beta',
