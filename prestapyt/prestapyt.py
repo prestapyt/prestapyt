@@ -280,7 +280,7 @@ class PrestaShopWebService(object):
         except ElementTree.ParseError as e:
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s. %s' %
-                (e, content[:512])
+                (e, stripped_content)
             )
 
         return parsed_content
