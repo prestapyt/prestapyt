@@ -25,7 +25,7 @@ setup(
     include_package_data = True,
 
     # Package dependencies.
-    install_requires = ['requests','future'],
+    install_requires = ['requests', 'future', 'importlib-metadata; python_version < "3.8"'],
     setup_requires=[
         'setuptools_scm',
     ],
