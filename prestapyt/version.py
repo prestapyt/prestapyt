@@ -1,5 +1,7 @@
-from importlib.metadata import version, PackageNotFoundError
-
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except:
+    from importlib_metadata import version, PackageNotFoundError
 
 __author__ = "Guewen Baconnier <guewen.baconnier@gmail.com>"
 
