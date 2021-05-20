@@ -34,7 +34,7 @@ def _parse_node(node):
 
     #Save childrens
     has_child = False
-    for child in node.getchildren():
+    for child in list(node):
         has_child = True
         ctag = child.tag
         ctree = _parse_node(child)
