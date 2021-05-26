@@ -32,6 +32,13 @@ def _process(doc, tag, tag_value):
         tag_value = ''
 
     # Create a new node for simple values
+    fmt = []
+    if isinstance(tag_value, (datetime, date)):
+        fmt.append('%Y-%m-%d')
+    if isinstance(tag_value, (datetime, time)):
+        fmt.append('%H:%M:%S')
+    if fmt:
+        tag_value = tag_value.strftime(' '.join(fmt))
     if (isinstance(tag_value, (float, int)) or
             isinstance(tag_value, basestring)):
         return _process_simple(doc, tag, tag_value)
