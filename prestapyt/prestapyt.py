@@ -188,12 +188,14 @@ class PrestaShopWebService(object):
             return True
         elif status_code == 401:
             # the content is empty for auth errors
+            print("Authentication error")
             raise PrestaShopAuthenticationError(
                 message_by_code[status_code],
                 status_code
             )
         elif status_code in message_by_code:
             ps_error_code, ps_error_msg = self._parse_error(content)
+            print(f"status {status_code}")
             raise PrestaShopWebServiceError(
                 message_by_code[status_code],
                 status_code,
@@ -202,6 +204,7 @@ class PrestaShopWebService(object):
             )
         else:
             ps_error_code, ps_error_msg = self._parse_error(content)
+            print("Unknown prestashop error")
             raise PrestaShopWebServiceError(
                 'Unknown error',
                 status_code,
@@ -272,16 +275,19 @@ class PrestaShopWebService(object):
         :return: an ElementTree of the content
         """
         if not content:
+            print("Http response is empty")
             raise PrestaShopWebServiceError('HTTP response is empty')
 
         try:
             stripped_content = self.illegal_xml_chars.sub(b'', content)
             parsed_content = ElementTree.fromstring(stripped_content)
         except ExpatError as err:
+            print("Expaterror")
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s' % (err,)
             )
         except ElementTree.ParseError as e:
+            print("ElementTree ParseError")
             raise PrestaShopWebServiceError(
                 'HTTP XML response is not parsable : %s. %s' %
                 (e, stripped_content)
@@ -300,6 +306,7 @@ class PrestaShopWebService(object):
             Cheat-sheet+-+Concepts+outlined+in+this+tutorial
         """
         if not isinstance(options, dict):
+            print("Parameters must be an instance of dict")
             raise PrestaShopWebServiceError(
                 'Parameters must be a instance of dict'
             )
@@ -314,6 +321,7 @@ class PrestaShopWebService(object):
             for param in options
         ]).difference(supported)
         if unsupported:
+            print("Unsupported parameters")
             raise PrestaShopWebServiceError(
                 'Unsupported parameters: %s' % (', '.join(tuple(unsupported)),)
             )
