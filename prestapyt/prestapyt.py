@@ -252,6 +252,10 @@ class PrestaShopWebService(object):
                 data=data,
                 headers=request_headers,
             )
+        except Exception as error:
+            print("Error in prestapyt execute")
+            print(error)
+            raise
         finally:
             if self.verbose:
                 HTTPConnection.debuglevel = currentlevel
