@@ -28,6 +28,7 @@ from urllib.parse import urlencode
 import warnings
 import requests
 import mimetypes
+import logging
 
 from . import xml2dict
 from . import dict2xml
@@ -288,13 +289,8 @@ class PrestaShopWebService(object):
             )
         except ElementTree.ParseError as e:
             print("ElementTree ParseError")
-            print("stripped_content", stripped_content)
-            raise
-            print(e)
-            raise PrestaShopWebServiceError(
-                'HTTP XML response is not parsable : %s. %s' %
-                (e, stripped_content)
-            )
+            logging.exception('Caught ElementTree ParseError')
+            raise PrestaShopWebServiceError
 
         return parsed_content
 
