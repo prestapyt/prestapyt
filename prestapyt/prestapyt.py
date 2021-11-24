@@ -33,7 +33,12 @@ from . import xml2dict
 from . import dict2xml
 
 from xml.parsers.expat import ExpatError
-from packaging.version import Version
+
+try:
+    from packaging.version import Version
+except ImportError as e:
+    from distutils.version import LooseVersion as Version
+
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError as e:
