@@ -33,7 +33,7 @@ from . import xml2dict
 from . import dict2xml
 
 from xml.parsers.expat import ExpatError
-from distutils.version import LooseVersion
+from packaging.version import Version
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError as e:
@@ -211,9 +211,9 @@ class PrestaShopWebService(object):
             Otherwise raise an error PrestaShopWebServiceError
         """
         if version:
-            if not (LooseVersion(self.MIN_COMPATIBLE_VERSION) <=
-                    LooseVersion(version) <=
-                    LooseVersion(self.MAX_COMPATIBLE_VERSION)):
+            if not (Version(self.MIN_COMPATIBLE_VERSION) <=
+                    Version(version) <=
+                    Version(self.MAX_COMPATIBLE_VERSION)):
                 warnings.warn((
                     "This library may not be compatible "
                     "with this version of PrestaShop (%s). "
