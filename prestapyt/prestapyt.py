@@ -245,6 +245,7 @@ class PrestaShopWebService(object):
                 url,
                 data=data,
                 headers=request_headers,
+                verify=False,
             )
         finally:
             if self.verbose:
