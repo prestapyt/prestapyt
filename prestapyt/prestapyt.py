@@ -493,7 +493,7 @@ class PrestaShopWebService(object):
         :return: headers and body.
         """
         BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF = '\r\n'
+        CRLF = b'\r\n'
         L = []
         for (key, filename, value) in files:
             L.append('--' + BOUNDARY)
@@ -505,6 +505,7 @@ class PrestaShopWebService(object):
             L.append(value)
         L.append('--' + BOUNDARY + '--')
         L.append('')
+        L = map(lambda l: l if isinstance(l, bytes) else l.encode('utf-8'), L)
         body = CRLF.join(L)
         headers = {
             'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY
