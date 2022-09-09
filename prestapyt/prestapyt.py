@@ -94,7 +94,7 @@ class PrestaShopWebService(object):
     MAX_COMPATIBLE_VERSION = '1.7.8.999'
 
     def __init__(self, api_url, api_key, debug=False, session=None,
-                 verbose=False):
+                 verbose=False, custom_headers=None):
         """
         Create an instance of PrestashopWebService.
 
@@ -143,6 +143,8 @@ class PrestaShopWebService(object):
 
         if session is None:
             self.client = requests.Session()
+            if custom_headers:
+                self.client.headers.update(custom_headers)
         else:
             self.client = session
 
