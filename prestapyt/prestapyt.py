@@ -33,8 +33,12 @@ import warnings
 import requests
 import mimetypes
 
-from . import xml2dict
-from . import dict2xml
+try:
+    from . import xml2dict
+    from . import dict2xml
+except ImportError:
+    import xml2dict
+    import dict2xml
 
 from xml.parsers.expat import ExpatError
 
@@ -58,8 +62,11 @@ try:  # for Python 3
 except ImportError:
     from httplib import HTTPConnection
 
-from .version import __author__
-from .version import __version__
+try:
+    from .version import __author__
+    from .version import __version__
+except ImportError:
+    from version import __author__, __version__
 
 
 class PrestaShopWebServiceError(Exception):
