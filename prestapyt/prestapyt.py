@@ -452,7 +452,7 @@ class PrestaShopWebService(object):
         """
         return self._execute(url, 'HEAD').headers
 
-    def edit(self, resource, content, options=None):
+    def edit(self, resource, content):
         """Edit (PUT) a resource.
 
         :param resource: type of resource to edit
@@ -460,9 +460,6 @@ class PrestaShopWebService(object):
         :return: an ElementTree of the Webservice's response
         """
         full_url = "%s%s" % (self._api_url, resource)
-        if options:
-            self._validate_query_options(options)
-            full_url += "?%s" % (self._options_to_querystring(options),)
         return self.edit_with_url(full_url, content)
 
     def edit_with_url(self, url, content):
