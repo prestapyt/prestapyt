@@ -692,7 +692,7 @@ if __name__ == '__main__':
 
     address_data = prestashop.get('addresses', 1)
     address_data['address']['firstname'] = 'Robert'
-    prestashop.edit('addresses', 1, address_data)
+    prestashop.edit('addresses', address_data)
 
     address_data = prestashop.get('addresses', options={'schema': 'blank'})
     address_data['address'].update({'address1': '1 Infinite Loop',
