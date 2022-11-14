@@ -123,6 +123,10 @@ class PrestaShopWebService(object):
         self._api_url = api_url
         self._api_key = api_key
 
+        # add https to api_url if not present
+        if not re.match('^https?://', self._api_url):
+            self._api_url = 'https://' + self._api_url
+
         # add a trailing slash to the url if there is not one
         if not self._api_url.endswith('/'):
             self._api_url += '/'
