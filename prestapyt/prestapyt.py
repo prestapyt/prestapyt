@@ -23,8 +23,10 @@ Questions, comments? guewen.baconnier@gmail.com
 # install_aliases() makes sense only on python 2.x
 # On Python 3.x it generates deprecated warning (import imp)
 from future.utils import PY2
+
 if PY2:
     from future.standard_library import install_aliases
+
     install_aliases()
 
 from urllib.parse import urlencode
@@ -76,8 +78,7 @@ class PrestaShopWebServiceError(Exception):
     from prestapyt import PrestaShopWebServiceError
     """
 
-    def __init__(self, msg, error_code=None,
-                 ps_error_msg='', ps_error_code=None):
+    def __init__(self, msg, error_code=None, ps_error_msg="", ps_error_code=None):
         """Intiliaze webservice error."""
         self.msg = msg
         self.error_code = error_code
@@ -89,19 +90,18 @@ class PrestaShopWebServiceError(Exception):
         return repr(self.ps_error_msg or self.msg)
 
 
-class PrestaShopAuthenticationError(PrestaShopWebServiceError): # noqa
-    pass # noqa
+class PrestaShopAuthenticationError(PrestaShopWebServiceError):  # noqa
+    pass  # noqa
 
 
 class PrestaShopWebService(object):
     """Interact with the PrestaShop WebService API, use XML for messages."""
 
-    MIN_COMPATIBLE_VERSION = '1.4.0.17'
+    MIN_COMPATIBLE_VERSION = "1.4.0.17"
     # 4th version number is to avoid constant version changes
-    MAX_COMPATIBLE_VERSION = '1.7.8.999'
+    MAX_COMPATIBLE_VERSION = "1.7.8.999"
 
-    def __init__(self, api_url, api_key, debug=False, session=None,
-                 verbose=False):
+    def __init__(self, api_url, api_key, debug=False, session=None, verbose=False):
         """
         Create an instance of PrestashopWebService.
 
@@ -137,12 +137,12 @@ class PrestaShopWebService(object):
         self._api_key = api_key
 
         # add a trailing slash to the url if there is not one
-        if not self._api_url.endswith('/'):
-            self._api_url += '/'
+        if not self._api_url.endswith("/"):
+            self._api_url += "/"
 
         # add a trail /api/ if there is not
-        if not self._api_url.endswith('/api/'):
-            self._api_url += 'api/'
+        if not self._api_url.endswith("/api/"):
+            self._api_url += "api/"
 
         # optional arguments
         self.debug = debug
@@ -154,7 +154,7 @@ class PrestaShopWebService(object):
             self.client = session
 
         if not self.client.auth:
-            self.client.auth = (api_key, '')
+            self.client.auth = (api_key, "")
 
     def _parse_error(self, xml_content):
         """Take the XML content as string and extract the PrestaShop error.
@@ -164,20 +164,18 @@ class PrestaShopWebService(object):
         """
         error_answer = self._parse(xml_content)
         if isinstance(error_answer, dict):
-            error_content = (error_answer
-                             .get('prestashop', {})
-                             .get('errors', {})
-                             .get('error', {})
-                             )
+            error_content = (
+                error_answer.get("prestashop", {}).get("errors", {}).get("error", {})
+            )
             if isinstance(error_content, list):
                 error_content = error_content[0]
-            code = error_content.get('code')
-            message = error_content.get('message')
+            code = error_content.get("code")
+            message = error_content.get("message")
         elif isinstance(error_answer, type(ElementTree.Element(None))):
             # http://stackoverflow.com/questions/9225913
-            error = error_answer.find('errors/error')
-            code = error.find('code').text
-            message = error.find('message').text
+            error = error_answer.find("errors/error")
+            code = error.find("code").text
+            message = error.find("message").text
         return (code, message)
 
     def _check_status_code(self, status_code, content):
@@ -188,20 +186,20 @@ class PrestaShopWebService(object):
         :param status_code: status code returned by the server
         :return: True or raise an exception PrestaShopWebServiceError
         """
-        message_by_code = {204: 'No content',
-                           400: 'Bad Request',
-                           401: 'Unauthorized',
-                           404: 'Not Found',
-                           405: 'Method Not Allowed',
-                           500: 'Internal Server Error',
-                           }
+        message_by_code = {
+            204: "No content",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+            405: "Method Not Allowed",
+            500: "Internal Server Error",
+        }
         if status_code in (200, 201):
             return True
         elif status_code == 401:
             # the content is empty for auth errors
             raise PrestaShopAuthenticationError(
-                message_by_code[status_code],
-                status_code
+                message_by_code[status_code], status_code
             )
         elif status_code in message_by_code:
             ps_error_code, ps_error_msg = self._parse_error(content)
@@ -214,7 +212,7 @@ class PrestaShopWebService(object):
         else:
             ps_error_code, ps_error_msg = self._parse_error(content)
             raise PrestaShopWebServiceError(
-                'Unknown error',
+                "Unknown error",
                 status_code,
                 ps_error_msg=ps_error_msg,
                 ps_error_code=ps_error_code,
@@ -228,13 +226,19 @@ class PrestaShopWebService(object):
             Otherwise raise an error PrestaShopWebServiceError
         """
         if version:
-            if not (Version(self.MIN_COMPATIBLE_VERSION) <=
-                    Version(version) <=
-                    Version(self.MAX_COMPATIBLE_VERSION)):
-                warnings.warn((
-                    "This library may not be compatible "
-                    "with this version of PrestaShop (%s). "
-                    "Please upgrade/downgrade this library") % (version,))
+            if not (
+                Version(self.MIN_COMPATIBLE_VERSION)
+                <= Version(version)
+                <= Version(self.MAX_COMPATIBLE_VERSION)
+            ):
+                warnings.warn(
+                    (
+                        "This library may not be compatible "
+                        "with this version of PrestaShop (%s). "
+                        "Please upgrade/downgrade this library"
+                    )
+                    % (version,)
+                )
         return True
 
     def _execute(self, url, method, data=None, add_headers=None):
@@ -268,7 +272,7 @@ class PrestaShopWebService(object):
                 HTTPConnection.debuglevel = currentlevel
 
         self._check_status_code(response.status_code, response.content)
-        self._check_version(response.headers.get('psws-version'))
+        self._check_version(response.headers.get("psws-version"))
 
         return response
 
@@ -279,18 +283,17 @@ class PrestaShopWebService(object):
         :return: an ElementTree of the content
         """
         if not content:
-            raise PrestaShopWebServiceError('HTTP response is empty')
+            raise PrestaShopWebServiceError("HTTP response is empty")
 
         try:
             parsed_content = ElementTree.fromstring(content)
         except ExpatError as err:
             raise PrestaShopWebServiceError(
-                'HTTP XML response is not parsable : %s' % (err,)
+                "HTTP XML response is not parsable : %s" % (err,)
             )
         except ElementTree.ParseError as e:
             raise PrestaShopWebServiceError(
-                'HTTP XML response is not parsable : %s. %s' %
-                (e, content[:512])
+                "HTTP XML response is not parsable : %s. %s" % (e, content[:512])
             )
 
         return parsed_content
@@ -306,22 +309,26 @@ class PrestaShopWebService(object):
             Cheat-sheet+-+Concepts+outlined+in+this+tutorial
         """
         if not isinstance(options, dict):
-            raise PrestaShopWebServiceError(
-                'Parameters must be a instance of dict'
-            )
+            raise PrestaShopWebServiceError("Parameters must be a instance of dict")
         supported = (
-            'filter', 'display', 'sort','ws_key',
-            'limit', 'schema', 'date', 'id_shop', 'id_group_shop',
+            "filter",
+            "display",
+            "sort",
+            "ws_key",
+            "limit",
+            "schema",
+            "date",
+            "id_shop",
+            "id_group_shop",
         )
         # filter[firstname] (as e.g.) is allowed
         # so check only the part before a [
-        unsupported = set([
-            param.split('[')[0]
-            for param in options
-        ]).difference(supported)
+        unsupported = set([param.split("[")[0] for param in options]).difference(
+            supported
+        )
         if unsupported:
             raise PrestaShopWebServiceError(
-                'Unsupported parameters: %s' % (', '.join(tuple(unsupported)),)
+                "Unsupported parameters: %s" % (", ".join(tuple(unsupported)),)
             )
         return True
 
@@ -341,7 +348,7 @@ class PrestaShopWebService(object):
         :return: string to use in the url
         """
         if self.debug:
-            options.update({'debug': True})
+            options.update({"debug": True})
         return urlencode(options)
 
     def add(self, resource, content=None, files=None, options=None):
@@ -373,14 +380,12 @@ class PrestaShopWebService(object):
         """
         if files is not None:
             headers, data = self.encode_multipart_formdata(files)
-            response = self._execute(url, 'POST', data=data,
-                                     add_headers=headers)
+            response = self._execute(url, "POST", data=data, add_headers=headers)
         elif xml is not None:
-            headers = {'Content-Type': 'text/xml'}
-            response = self._execute(url, 'POST', data=xml,
-                                     add_headers=headers)
+            headers = {"Content-Type": "text/xml"}
+            response = self._execute(url, "POST", data=xml, add_headers=headers)
         else:
-            raise PrestaShopWebServiceError('Undefined data.')
+            raise PrestaShopWebServiceError("Undefined data.")
         return self._parse(response.content)
 
     def search(self, resource, options=None):
@@ -425,7 +430,7 @@ class PrestaShopWebService(object):
         :param url: URL which explicitly set resource type and ID to retrieve
         :return: an ElementTree of the resource
         """
-        return self._parse(self._execute(url, 'GET').content)
+        return self._parse(self._execute(url, "GET").content)
 
     def head(self, resource, resource_id=None, options=None):
         """Head method (HEAD) a resource.
@@ -450,7 +455,7 @@ class PrestaShopWebService(object):
         :param url: URL which explicitly set resource type and ID to retrieve
         :return: the header of the response as a dict
         """
-        return self._execute(url, 'HEAD').headers
+        return self._execute(url, "HEAD").headers
 
     def edit(self, resource, content):
         """Edit (PUT) a resource.
@@ -469,8 +474,8 @@ class PrestaShopWebService(object):
         :param content: modified XML as string of the resource.
         :return: an ElementTree of the Webservice's response
         """
-        headers = {'Content-Type': 'text/xml'}
-        response = self._execute(url, 'PUT', data=content, add_headers=headers)
+        headers = {"Content-Type": "text/xml"}
+        response = self._execute(url, "PUT", data=content, add_headers=headers)
         return self._parse(response.content)
 
     def delete(self, resource, resource_ids):
@@ -483,8 +488,9 @@ class PrestaShopWebService(object):
         """
         full_url = self._api_url + resource
         if isinstance(resource_ids, (tuple, list)):
-            full_url += "/?id=[%s]" % (','.join([str(resource_id)
-                                       for resource_id in resource_ids]),)
+            full_url += "/?id=[%s]" % (
+                ",".join([str(resource_id) for resource_id in resource_ids]),
+            )
         else:
             full_url += "/%s" % str(resource_ids)
         return self.delete_with_url(full_url)
@@ -496,7 +502,7 @@ class PrestaShopWebService(object):
         :return: True if delete is done,
             raise an error PrestaShopWebServiceError if missed
         """
-        self._execute(url, 'DELETE')
+        self._execute(url, "DELETE")
         return True
 
     def encode_multipart_formdata(self, files):
@@ -506,24 +512,24 @@ class PrestaShopWebService(object):
             elements for data to be uploaded as files.
         :return: headers and body.
         """
-        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF = b'\r\n'
+        BOUNDARY = "----------ThIs_Is_tHe_bouNdaRY_$"
+        CRLF = b"\r\n"
         L = []
         for (key, filename, value) in files:
-            L.append('--' + BOUNDARY)
+            L.append("--" + BOUNDARY)
             L.append(
                 'Content-Disposition: form-data; \
-                    name="%s"; filename="%s"' % (key, filename))
-            L.append('Content-Type: %s' % self.get_content_type(filename))
-            L.append('')
+                    name="%s"; filename="%s"'
+                % (key, filename)
+            )
+            L.append("Content-Type: %s" % self.get_content_type(filename))
+            L.append("")
             L.append(value)
-        L.append('--' + BOUNDARY + '--')
-        L.append('')
-        L = map(lambda l: l if isinstance(l, bytes) else l.encode('utf-8'), L)
+        L.append("--" + BOUNDARY + "--")
+        L.append("")
+        L = map(lambda l: l if isinstance(l, bytes) else l.encode("utf-8"), L)
         body = CRLF.join(L)
-        headers = {
-            'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY
-        }
+        headers = {"Content-Type": "multipart/form-data; boundary=%s" % BOUNDARY}
         return headers, body
 
     def get_content_type(self, filename):
@@ -532,7 +538,7 @@ class PrestaShopWebService(object):
         :param filename: file name.
         :return: mimetype.
         """
-        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        return mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
 
 class PrestaShopWebServiceDict(PrestaShopWebService):
@@ -551,6 +557,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
             (one or more of 'filter', 'display', 'sort', 'limit', 'schema')
         :return: list of ids as int
         """
+
         def dive(response, level=1):
             # not deterministic but we know that we only have one key
             # in the response for the first 2 levels like
@@ -571,17 +578,18 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         # {'addresses': {'address': {'attrs': {'id': '1'}, 'value': ''}}}
         # for zero resource :
         # {'addresses': ''}
-        response = super(
-            PrestaShopWebServiceDict, self).search(resource, options=options)
+        response = super(PrestaShopWebServiceDict, self).search(
+            resource, options=options
+        )
 
         elems = dive(response, level=2)
         # when there is only 1 resource, we do not have a list in the response
         if not elems:
             return []
         elif isinstance(elems, list):
-            ids = [int(elem['attrs']['id']) for elem in elems]
+            ids = [int(elem["attrs"]["id"]) for elem in elems]
         else:
-            ids = [int(elems['attrs']['id'])]
+            ids = [int(elems["attrs"]["id"])]
         return ids
 
     def get_with_url(self, url):
@@ -593,7 +601,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         """
         response = super(PrestaShopWebServiceDict, self).get_with_url(url)
         if isinstance(response, dict):
-            return response['prestashop']
+            return response["prestashop"]
         else:
             return response
 
@@ -607,7 +615,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         :param fields: dict of fields of the resource to create
         :return: response of the server
         """
-        blank_envelope = self.get(resource, options={'schema': 'blank'})
+        blank_envelope = self.get(resource, options={"schema": "blank"})
         complete_content = dict(blank_envelope, **fields)
         return self.add(resource, complete_content)
 
@@ -644,7 +652,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         :return: a dict of the response from the web service
         """
         if content is not None and isinstance(content, dict):
-            xml_content = dict2xml.dict2xml({'prestashop': content})
+            xml_content = dict2xml.dict2xml({"prestashop": content})
         else:
             xml_content = content
         _super = super(PrestaShopWebServiceDict, self)
@@ -657,7 +665,7 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         :param content: modified dict of the resource.
         :return: an ElementTree of the Webservice's response
         """
-        xml_content = dict2xml.dict2xml({'prestashop': content})
+        xml_content = dict2xml.dict2xml({"prestashop": content})
         _super = super(PrestaShopWebServiceDict, self)
         return _super.edit_with_url(url, xml_content)
 
@@ -671,51 +679,56 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         return xml2dict.ET2dict(parsed_content)
 
 
-if __name__ == '__main__':
-    prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',
-                                          'BVWPFFYBT97WKM959D7AVVD0M4815Y1L')
+if __name__ == "__main__":
+    prestashop = PrestaShopWebServiceDict(
+        "http://localhost:8080/api", "BVWPFFYBT97WKM959D7AVVD0M4815Y1L"
+    )
 
     from pprint import pprint
 
-    pprint(prestashop.get(''))
-    pprint(prestashop.head(''))
+    pprint(prestashop.get(""))
+    pprint(prestashop.head(""))
 
-    pprint(prestashop.search('addresses'))
-    pprint(prestashop.search('addresses', options={'limit': 0}))
-    pprint(prestashop.search('addresses', options={'limit': 1}))
-    pprint(prestashop.search('products'))
-    pprint(prestashop.search('customers'))
-    pprint(prestashop.search('carts'))
-    pprint(prestashop.search('categories'))
-    pprint(prestashop.search('configurations'))
-    pprint(prestashop.search('languages'))
+    pprint(prestashop.search("addresses"))
+    pprint(prestashop.search("addresses", options={"limit": 0}))
+    pprint(prestashop.search("addresses", options={"limit": 1}))
+    pprint(prestashop.search("products"))
+    pprint(prestashop.search("customers"))
+    pprint(prestashop.search("carts"))
+    pprint(prestashop.search("categories"))
+    pprint(prestashop.search("configurations"))
+    pprint(prestashop.search("languages"))
 
-    pprint(prestashop.get('addresses', 1))
-    pprint(prestashop.get('addresses', 1))
-    pprint(prestashop.get('products', 1))
+    pprint(prestashop.get("addresses", 1))
+    pprint(prestashop.get("addresses", 1))
+    pprint(prestashop.get("products", 1))
 
-    address_data = prestashop.get('addresses', 1)
-    address_data['address']['firstname'] = 'Robert'
-    prestashop.edit('addresses', address_data)
+    address_data = prestashop.get("addresses", 1)
+    address_data["address"]["firstname"] = "Robert"
+    prestashop.edit("addresses", address_data)
 
-    address_data = prestashop.get('addresses', options={'schema': 'blank'})
-    address_data['address'].update({'address1': '1 Infinite Loop',
-                                    'address2': '',
-                                    'alias': 'manufacturer',
-                                    'city': 'Cupertino',
-                                    'company': '',
-                                    'deleted': '0',
-                                    'dni': '',
-                                    'firstname': 'STEVE',
-                                    'id_country': '21',
-                                    'id_customer': '',
-                                    'id_manufacturer': '1',
-                                    'id_state': '5',
-                                    'id_supplier': '',
-                                    'lastname': 'JOBY',
-                                    'other': '',
-                                    'phone': '(800) 275-2273',
-                                    'phone_mobile': '',
-                                    'postcode': '95014',
-                                    'vat_number': ''})
-    prestashop.add('addresses', address_data)
+    address_data = prestashop.get("addresses", options={"schema": "blank"})
+    address_data["address"].update(
+        {
+            "address1": "1 Infinite Loop",
+            "address2": "",
+            "alias": "manufacturer",
+            "city": "Cupertino",
+            "company": "",
+            "deleted": "0",
+            "dni": "",
+            "firstname": "STEVE",
+            "id_country": "21",
+            "id_customer": "",
+            "id_manufacturer": "1",
+            "id_state": "5",
+            "id_supplier": "",
+            "lastname": "JOBY",
+            "other": "",
+            "phone": "(800) 275-2273",
+            "phone_mobile": "",
+            "postcode": "95014",
+            "vat_number": "",
+        }
+    )
+    prestashop.add("addresses", address_data)
