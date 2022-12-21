@@ -31,6 +31,7 @@ from urllib.parse import urlencode
 
 import warnings
 import requests
+import aiohttp
 import mimetypes
 
 from . import xml2dict
@@ -666,6 +667,119 @@ class PrestaShopWebServiceDict(PrestaShopWebService):
         parsed_content = super(PrestaShopWebServiceDict, self)._parse(content)
         return xml2dict.ET2dict(parsed_content)
 
+
+class PrestaShopWebServiceAsync(PrestaShopWebService):
+    """
+    Interact with the PrestaShop WebService API asynchronously, use XML for messages.
+    API is the same as for PrestaShopWebService, except for the `verbose` parameter.
+    """
+
+    def __init__(self, api_url, api_key, debug=False, session=None):
+        self._api_url = api_url
+        self._api_key = api_key
+
+        if not self._api_url.endswith('/'): self._api_url += '/'
+
+        if not self._api_url.endswith('/api/'): self._api_url += 'api/'
+
+        self.debug = debug
+
+        if session is None:
+            self.client = aiohttp.ClientSession()
+        else:
+            self.client = session
+
+        if self.client.auth is None:
+            self._auth = aiohttp.BasicAuth(self._api_key)
+        else:
+            self._auth = None
+
+    async def _execute(self, url, method, data=None, add_headers={}):
+        request_headers = self.client.headers.copy()
+        request_headers.update(add_headers)
+
+        async with self.client.request(method, url, data=data, headers=request_headers, auth=self._auth) as response:
+            content = await response.read()
+            self._check_status_code(response.status, content)
+            self._check_version(response.headers.get('psws-version'))
+            return response, content
+
+    async def add(self, resource, content=None, files=None, options=None):
+        full_url = self._api_url + resource
+        if options is not None:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
+        return await self.add_with_url(full_url, content, files)
+
+    async def add_with_url(self, url, xml=None, files=None):
+        if files is not None:
+            headers, data = self.encode_multipart_formdata(files)
+            _, content = await self._execute(url, 'POST', data=data, add_headers=headers)
+        elif xml is not None:
+            headers = {'Content-Type': 'text/xml'}
+            _, content = await self._execute(url, 'POST', data=xml, add_headers=headers)
+        else:
+            raise PrestaShopWebServiceError('Undefined data.')
+        return self._parse(content)
+
+    async def search(self, resource, options=None):
+        return await self.get(resource, options=options)
+
+    async def get(self, resource, resource_id=None, options=None):
+        full_url = self._api_url + resource
+        if resource_id is not None:
+            full_url += "/%s" % (resource_id,)
+        if options is not None:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
+        return await self.get_with_url(full_url)
+
+    async def get_with_url(self, url):
+        _, content = await self._execute(url, 'GET')
+        return self._parse(content)
+
+    async def head(self, resource, resource_id=None, options=None):
+        full_url = self._api_url + resource
+        if resource_id is not None:
+            full_url += "/%s" % (resource_id,)
+        if options is not None:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
+        return await self.head_with_url(full_url)
+
+    async def head_with_url(self, url):
+        response, _ = await self._execute(url, 'HEAD')
+        return response.headers
+
+    async def edit(self, resource, content, options=None):
+        full_url = "%s%s" % (self._api_url, resource)
+        if options:
+            self._validate_query_options(options)
+            full_url += "?%s" % (self._options_to_querystring(options),)
+        return await self.edit_with_url(full_url, content)
+
+    async def edit_with_url(self, url, content):
+        headers = {'Content-Type': 'text/xml'}
+        _, content = await self._execute(url, 'PUT', data=content, add_headers=headers)
+        return self._parse(content)
+
+    async def delete(self, resource, resource_ids):
+        full_url = self._api_url + resource
+        if isinstance(resource_ids, (tuple, list)):
+            full_url += "/?id=[%s]" % (','.join([str(resource_id) for resource_id in resource_ids]),)
+        else:
+            full_url += "/%s" % str(resource_ids)
+        return await self.delete_with_url(full_url)
+
+    async def delete_with_url(self, url):
+        await self._execute(url, 'DELETE')
+        return True
+
+    async def close(self): await self.client.close()
+
+    async def __aenter__(self): return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb): await self.close()
 
 if __name__ == '__main__':
     prestashop = PrestaShopWebServiceDict('http://localhost:8080/api',

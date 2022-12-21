@@ -25,7 +25,7 @@ setup(
     include_package_data = True,
 
     # Package dependencies.
-    install_requires = ['requests', 'future', 'importlib-metadata; python_version < "3.8"'],
+    install_requires = ['requests', 'future', 'importlib-metadata; python_version < "3.8"', 'aiohttp'],
     setup_requires=[
         'setuptools_scm',
     ],
