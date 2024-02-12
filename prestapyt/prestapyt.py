@@ -93,8 +93,15 @@ class PrestaShopWebService(object):
     # 4th version number is to avoid constant version changes
     MAX_COMPATIBLE_VERSION = '1.7.8.999'
 
-    def __init__(self, api_url, api_key, debug=False, session=None,
-                 verbose=False):
+def __init__(
+        self,
+        api_url,
+        api_key,
+        debug=False,
+        session=None,
+        verbose=False,
+        disable_warnings=True,
+    ):
         """
         Create an instance of PrestashopWebService.
 
@@ -124,22 +131,25 @@ class PrestaShopWebService(object):
         :param session: pass a custom requests Session
         :param verbose: activate logging of the requests/responses (but no
         responses body)
+        :param disable_warnings: if True, warnings will not be visible at log level
+        (default: True)
         """
         # required to hit prestashop
         self._api_url = api_url
         self._api_key = api_key
 
         # add a trailing slash to the url if there is not one
-        if not self._api_url.endswith('/'):
-            self._api_url += '/'
+        if not self._api_url.endswith("/"):
+            self._api_url += "/"
 
         # add a trail /api/ if there is not
-        if not self._api_url.endswith('/api/'):
-            self._api_url += 'api/'
+        if not self._api_url.endswith("/api/"):
+            self._api_url += "api/"
 
         # optional arguments
         self.debug = debug
         self.verbose = verbose
+        self.disable_warnings = disable_warnings
 
         if session is None:
             self.client = requests.Session()
@@ -147,7 +157,11 @@ class PrestaShopWebService(object):
             self.client = session
 
         if not self.client.auth:
-            self.client.auth = (api_key, '')
+            self.client.auth = (api_key, "")
+
+        # disable warnings from urllib3
+        if self.disable_warnings:
+            urllib3.disable_warnings()
 
     def _parse_error(self, xml_content):
         """Take the XML content as string and extract the PrestaShop error.
